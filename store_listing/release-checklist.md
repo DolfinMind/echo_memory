@@ -13,6 +13,7 @@
 - [x] Analyzer clean and automated tests passing
 - [x] App icon, feature graphic, and six phone screenshots prepared
 - [x] Store listing, privacy policy, and Data safety answers prepared
+- [x] Privacy policy published as public HTML at `https://dolfinmind.github.io/echo_memory/privacy-policy/`
 
 ## Required owner actions in Play Console
 
@@ -24,7 +25,7 @@
 - [ ] Set **Contains ads** to **No**
 - [ ] Set app access to **All functionality is available without special access**
 - [ ] Complete the Data safety form using `data-safety.md`
-- [ ] Publish `privacy-policy.md` at a public, non-editable, non-PDF URL and enter it in Play Console
+- [ ] Replace the rejected privacy URL in Play Console with `https://dolfinmind.github.io/echo_memory/privacy-policy/`
 - [ ] Complete the content-rating questionnaire honestly; the expected result is suitable for a general audience
 - [ ] Select target ages 13–15, 16–17, and 18+ unless the product strategy changes
 - [ ] Declare that the app is not a news, health, financial, government, or social app
