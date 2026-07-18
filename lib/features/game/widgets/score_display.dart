@@ -1,8 +1,10 @@
 /// Score display widget for Echo Memory
 /// Animated score counter with effects
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_text_styles.dart';
 
@@ -26,52 +28,56 @@ class _ScoreDisplayState extends State<ScoreDisplay> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.accentGold.withOpacity(0.3),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accentGold.withOpacity(0.1),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.showLabel)
-            Text(
-              'SCORE',
-              style: AppTextStyles.labelSmall.copyWith(
-                letterSpacing: 2,
-                color: AppColors.textMuted,
-              ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.accentGold.withValues(alpha: 0.3),
             ),
-          // Implicitly animate the score number
-          TweenAnimationBuilder<int>(
-            tween: IntTween(begin: 0, end: widget.score),
-            duration: const Duration(milliseconds: 1000),
-            curve: Curves.easeOut,
-            builder: (context, value, child) {
-              return Text(
-                value.toString().padLeft(5, '0'),
-                style: AppTextStyles.score,
-              );
-            },
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.accentGold.withValues(alpha: 0.1),
+                blurRadius: 20,
+                spreadRadius: 2,
+              ),
+            ],
           ),
-        ],
-      ),
-    ).animate(target: widget.animate ? 1 : 0).scale(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.showLabel)
+                Text(
+                  'SCORE',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    letterSpacing: 2,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              // Implicitly animate the score number
+              TweenAnimationBuilder<int>(
+                tween: IntTween(begin: 0, end: widget.score),
+                duration: const Duration(milliseconds: 1000),
+                curve: Curves.easeOut,
+                builder: (context, value, child) {
+                  return Text(
+                    value.toString().padLeft(5, '0'),
+                    style: AppTextStyles.score,
+                  );
+                },
+              ),
+            ],
+          ),
+        )
+        .animate(target: widget.animate ? 1 : 0)
+        .scale(
           begin: const Offset(1, 1),
           end: const Offset(1.05, 1.05),
           duration: 200.ms,
           curve: Curves.easeOut,
-        ).then().scale(
+        )
+        .then()
+        .scale(
           begin: const Offset(1.05, 1.05),
           end: const Offset(1, 1),
           duration: 200.ms,
@@ -140,24 +146,15 @@ class CircularTimer extends StatelessWidget {
           if (showText)
             Text(
               '$timeRemaining',
-              style: isCritical
-                  ? AppTextStyles.timerCritical
-                  : AppTextStyles.timer,
+              style: AppTextStyles.labelLarge.copyWith(
+                color: progressColor,
+                fontSize: size * 0.32,
+                fontWeight: FontWeight.w800,
+              ),
             ),
         ],
       ),
     );
-
-    // Add shake animation when critical
-    if (isCritical && timeRemaining > 0) {
-      timer = timer
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .scale(
-            begin: const Offset(1, 1),
-            end: const Offset(1.05, 1.05),
-            duration: 200.ms,
-          );
-    }
 
     return timer;
   }
@@ -204,16 +201,17 @@ class LivesDisplay extends StatelessWidget {
         final isActive = index < lives;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2),
-          child: Icon(
-            isActive ? LucideIcons.heart : LucideIcons.heartOff,
-            color: isActive
-                ? AppColors.accentError
-                : AppColors.textMuted.withOpacity(0.3),
-            size: size,
-          )
-              .animate()
-              .fadeIn(delay: (index * 100).ms)
-              .scale(delay: (index * 100).ms),
+          child:
+              Icon(
+                    isActive ? LucideIcons.heart : LucideIcons.heartOff,
+                    color: isActive
+                        ? AppColors.accentError
+                        : AppColors.textMuted.withValues(alpha: 0.3),
+                    size: size,
+                  )
+                  .animate()
+                  .fadeIn(delay: (index * 100).ms)
+                  .scale(delay: (index * 100).ms),
         );
       }),
     );
@@ -236,18 +234,14 @@ class LevelIndicator extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.orbPurple.withOpacity(0.2),
+        color: AppColors.orbPurple.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.orbPurple.withOpacity(0.4)),
+        border: Border.all(color: AppColors.orbPurple.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            LucideIcons.layers,
-            color: AppColors.orbPurple,
-            size: 18,
-          ),
+          const Icon(LucideIcons.layers, color: AppColors.orbPurple, size: 18),
           const SizedBox(width: 8),
           Text(
             'Level $level',
@@ -259,7 +253,7 @@ class LevelIndicator extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: AppColors.orbPurple.withOpacity(0.3),
+              color: AppColors.orbPurple.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(

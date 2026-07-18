@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../../config/theme/app_colors.dart';
 import '../controllers/stream_controller.dart';
 
@@ -7,11 +7,7 @@ class StreamItemWidget extends StatelessWidget {
   final StreamItem item;
   final double size;
 
-  const StreamItemWidget({
-    super.key,
-    required this.item,
-    this.size = 60,
-  });
+  const StreamItemWidget({super.key, required this.item, this.size = 60});
 
   static const List<Color> colors = [
     AppColors.orbRed,
@@ -39,22 +35,18 @@ class StreamItemWidget extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(size / 4),
-        border: Border.all(color: color.withOpacity(0.5), width: 2),
+        border: Border.all(color: color.withValues(alpha: 0.5), width: 2),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.4),
+            color: color.withValues(alpha: 0.4),
             blurRadius: 12,
             spreadRadius: 1,
           ),
         ],
       ),
-      child: Icon(
-        shape,
-        color: color,
-        size: size * 0.5,
-      ),
+      child: Icon(shape, color: color, size: size * 0.5),
     );
   }
 }

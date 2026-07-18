@@ -1,5 +1,7 @@
 /// Echo Memory - App Configuration
 /// Main app widget with theme and routing
+library;
+
 import 'package:flutter/material.dart';
 import 'config/theme/app_theme.dart';
 import 'features/home/screens/home_screen.dart';

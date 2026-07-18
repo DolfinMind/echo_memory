@@ -1,5 +1,7 @@
 /// Power-up bar widget for Echo Memory
 /// Displays available power-ups with activation UI
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../config/theme/app_colors.dart';
@@ -25,7 +27,7 @@ class PowerUpBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.5),
+        color: AppColors.surface.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(30),
         border: Border.all(color: AppColors.glassBorder),
       ),
@@ -125,19 +127,20 @@ class _PowerUpButtonState extends State<_PowerUpButton>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: canUse
-                      ? widget.powerUp.color.withOpacity(0.2)
-                      : Colors.grey.withOpacity(0.1),
+                      ? widget.powerUp.color.withValues(alpha: 0.2)
+                      : Colors.grey.withValues(alpha: 0.1),
                   border: Border.all(
                     color: canUse
-                        ? widget.powerUp.color.withOpacity(0.6)
-                        : Colors.grey.withOpacity(0.3),
+                        ? widget.powerUp.color.withValues(alpha: 0.6)
+                        : Colors.grey.withValues(alpha: 0.3),
                     width: widget.isActive ? 2 : 1,
                   ),
                   boxShadow: widget.isActive
                       ? [
                           BoxShadow(
-                            color: widget.powerUp.color
-                                .withOpacity(0.3 + glowIntensity * 0.3),
+                            color: widget.powerUp.color.withValues(
+                              alpha: 0.3 + glowIntensity * 0.3,
+                            ),
                             blurRadius: 15,
                             spreadRadius: 2,
                           ),
@@ -148,7 +151,7 @@ class _PowerUpButtonState extends State<_PowerUpButton>
                   widget.powerUp.icon,
                   color: canUse
                       ? widget.powerUp.color
-                      : Colors.grey.withOpacity(0.5),
+                      : Colors.grey.withValues(alpha: 0.5),
                   size: 24,
                 ),
               ),
@@ -166,7 +169,7 @@ class _PowerUpButtonState extends State<_PowerUpButton>
                       color: widget.powerUp.color,
                       boxShadow: [
                         BoxShadow(
-                          color: widget.powerUp.color.withOpacity(0.5),
+                          color: widget.powerUp.color.withValues(alpha: 0.5),
                           blurRadius: 4,
                         ),
                       ],
@@ -212,25 +215,21 @@ class PowerUpActivationOverlay extends StatelessWidget {
           children: [
             // Icon with glow
             Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: powerUp.color.withOpacity(0.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: powerUp.color.withOpacity(0.5),
-                    blurRadius: 30,
-                    spreadRadius: 10,
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: powerUp.color.withValues(alpha: 0.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: powerUp.color.withValues(alpha: 0.5),
+                        blurRadius: 30,
+                        spreadRadius: 10,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Icon(
-                powerUp.icon,
-                color: powerUp.color,
-                size: 50,
-              ),
-            )
+                  child: Icon(powerUp.icon, color: powerUp.color, size: 50),
+                )
                 .animate(onComplete: (_) => onComplete?.call())
                 .scale(
                   begin: const Offset(0.5, 0.5),
@@ -247,12 +246,12 @@ class PowerUpActivationOverlay extends StatelessWidget {
             const SizedBox(height: 20),
             // Power-up name
             Text(
-              powerUp.name.toUpperCase(),
-              style: AppTextStyles.headlineMedium.copyWith(
-                color: powerUp.color,
-                letterSpacing: 2,
-              ),
-            )
+                  powerUp.name.toUpperCase(),
+                  style: AppTextStyles.headlineMedium.copyWith(
+                    color: powerUp.color,
+                    letterSpacing: 2,
+                  ),
+                )
                 .animate()
                 .fadeIn(delay: 200.ms, duration: 300.ms)
                 .slideY(begin: 0.3, end: 0),
@@ -285,32 +284,31 @@ class ActivePowerUpIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: powerUp.color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: powerUp.color.withOpacity(0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            powerUp.icon,
-            color: powerUp.color,
-            size: 16,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: powerUp.color.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: powerUp.color.withValues(alpha: 0.5)),
           ),
-          const SizedBox(width: 6),
-          Text(
-            '${remainingSeconds}s',
-            style: AppTextStyles.labelMedium.copyWith(
-              color: powerUp.color,
-              fontWeight: FontWeight.bold,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(powerUp.icon, color: powerUp.color, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                '${remainingSeconds}s',
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: powerUp.color,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    )
+        )
         .animate(onPlay: (c) => c.repeat(reverse: true))
-        .shimmer(duration: 1000.ms, color: powerUp.color.withOpacity(0.3));
+        .shimmer(
+          duration: 1000.ms,
+          color: powerUp.color.withValues(alpha: 0.3),
+        );
   }
 }

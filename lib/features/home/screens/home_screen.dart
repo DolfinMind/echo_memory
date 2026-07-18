@@ -1,23 +1,22 @@
-/// Home screen for Echo Memory
-/// Premium main menu with animated background and mode selection
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
+
+import '../../../config/constants/game_constants.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_text_styles.dart';
-import '../../../core/utils/responsive_utils.dart';
+import '../../../core/services/storage_service.dart';
+import '../../../data/models/player_stats.dart';
 import '../../../shared/widgets/animated_gradient.dart';
 import '../../../shared/widgets/glass_container.dart';
-import '../widgets/game_mode_card.dart';
-import '../widgets/animated_title.dart';
-import '../../game/screens/game_screen.dart';
-import '../../practice/screens/practice_screen.dart';
+import '../../../shared/widgets/neon_button.dart';
 import '../../daily_challenge/screens/daily_challenge_screen.dart';
-import '../../settings/screens/settings_screen.dart';
-import '../../achievements/screens/achievements_screen.dart';
+import '../../game/screens/game_screen.dart';
 import '../../lumina/screens/lumina_screen.dart';
 import '../../nback/screens/nback_screen.dart';
+import '../../practice/screens/practice_screen.dart';
+import '../../settings/screens/settings_screen.dart';
 import '../../stream/screens/stream_screen.dart';
+import '../widgets/game_mode_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,27 +26,67 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final StorageService _storageService = StorageService();
+  PlayerStats _stats = const PlayerStats();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    final stats = await _storageService.getPlayerStats();
+    if (mounted) setState(() => _stats = stats);
+  }
+
+  Future<void> _navigateTo(Widget screen) async {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+    _loadStats();
+  }
+
   @override
   Widget build(BuildContext context) {
-    ResponsiveUtils.init(context);
-
     return Scaffold(
       body: ParticleBackground(
-        particleCount: 25, // Reduced from 40 for better performance
-        particleColor: AppColors.orbBlue.withOpacity(0.3),
-        child: AnimatedGradientBackground(
-          colors: [
-            const Color(0xFF0D0D1A),
-            const Color(0xFF1A1A3A),
-            const Color(0xFF0D1B2A),
-          ],
-          duration: const Duration(seconds: 15),
+        particleCount: 18,
+        particleColor: AppColors.orbBlue.withValues(alpha: 0.22),
+        child: GameGradientBackground(
+          showOverlay: false,
           child: SafeArea(
-            child: OrientationBuilder(
-              builder: (context, orientation) {
-                return orientation == Orientation.portrait
-                    ? _buildPortraitLayout()
-                    : _buildLandscapeLayout();
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final gutter = constraints.maxWidth >= 900 ? 32.0 : 20.0;
+                return CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildTopBar(gutter)),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(gutter, 16, gutter, 32),
+                      sliver: SliverToBoxAdapter(
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 980),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildHero(),
+                                const SizedBox(height: 30),
+                                const _SectionTitle(
+                                  title: 'Choose your focus',
+                                  subtitle: 'Every mode works offline.',
+                                ),
+                                const SizedBox(height: 14),
+                                _buildModes(),
+                                const SizedBox(height: 24),
+                                _buildPrivacyNote(),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
               },
             ),
           ),
@@ -56,388 +95,395 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPortraitLayout() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Column(
-        children: [
-          const SizedBox(height: 40),
-          // Animated title
-          const AnimatedGameTitle(),
-          const SizedBox(height: 16),
-          // Tagline
-          Text(
-            'Test your memory, challenge your mind',
-            style: AppTextStyles.bodyLarge.copyWith(
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
-          const SizedBox(height: 48),
-          // Game mode cards
-          _buildModeCards(),
-          const SizedBox(height: 32),
-          // Bottom actions
-          _buildBottomActions(),
-          const SizedBox(height: 24),
-        ],
+  Widget _buildTopBar(double gutter) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 980),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.orbBlue, AppColors.orbPurple],
+                  ),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  LucideIcons.brain,
+                  color: AppColors.textPrimary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Echo Memory', style: AppTextStyles.titleMedium),
+                    Text(
+                      'Free offline edition',
+                      style: AppTextStyles.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox.square(
+                dimension: 48,
+                child: IconButton.filledTonal(
+                  tooltip: 'Settings',
+                  onPressed: () => _navigateTo(const SettingsScreen()),
+                  icon: const Icon(LucideIcons.settings, size: 20),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildLandscapeLayout() {
-    return Row(
-      children: [
-        // Left side - Title
-        Expanded(
-          flex: 4,
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const AnimatedGameTitle(fontSize: 40),
-                const SizedBox(height: 16),
-                Text(
-                  'Test your memory,\nchallenge your mind',
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.textSecondary,
+  Widget _buildHero() {
+    return GlassContainer(
+      padding: EdgeInsets.zero,
+      backgroundColor: AppColors.surface.withValues(alpha: 0.9),
+      borderColor: AppColors.orbBlue.withValues(alpha: 0.28),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= 700;
+          final copy = _buildHeroCopy(wide);
+          final visual = _buildHeroVisual();
+          return Padding(
+            padding: EdgeInsets.all(wide ? 32 : 24),
+            child: wide
+                ? Row(
+                    children: [
+                      Expanded(flex: 3, child: copy),
+                      const SizedBox(width: 32),
+                      Expanded(flex: 2, child: visual),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [copy, const SizedBox(height: 28), visual],
                   ),
-                  textAlign: TextAlign.center,
-                ).animate().fadeIn(delay: 400.ms),
-                const SizedBox(height: 32),
-                _buildBottomActions(),
-              ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeroCopy(bool wide) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: AppColors.orbGreen.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            'FOCUS • RECALL • FLOW',
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.orbGreen,
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
-        // Right side - Mode cards
-        Expanded(
-          flex: 6,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            child: _buildModeCards(),
+        const SizedBox(height: 16),
+        Text(
+          'Build a stronger\nmemory loop.',
+          style: AppTextStyles.displaySmall.copyWith(
+            fontSize: wide ? 42 : 34,
+            height: 1.08,
           ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Watch a pattern, hold it in mind, then echo it back. '
+          'Short sessions, fair scoring, no distractions.',
+          style: AppTextStyles.bodyLarge,
+        ),
+        const SizedBox(height: 22),
+        NeonButton(
+          text: 'Start Classic Echo',
+          width: wide ? 230 : double.infinity,
+          color: AppColors.orbBlue,
+          icon: LucideIcons.play,
+          onPressed: () => _navigateTo(const DifficultySelectScreen()),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 16,
+          runSpacing: 8,
+          children: [
+            _InlineStat(label: 'High score', value: '${_stats.highScore}'),
+            _InlineStat(label: 'Best streak', value: '${_stats.bestStreak}'),
+            _InlineStat(label: 'Sessions', value: '${_stats.totalGamesPlayed}'),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildModeCards() {
-    return Column(
-      children: [
-        // Classic Echo (formerly Challenge Mode)
-        GameModeCard(
-          title: 'Classic Echo',
-          description: 'The original sequence memory challenge',
-          icon: LucideIcons.waves, // distinctive icon for Classic
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)],
+  Widget _buildHeroVisual() {
+    const colors = AppColors.gameOrbs;
+    return Semantics(
+      label: 'Five memory signals represented by unique colors and icons',
+      child: AspectRatio(
+        aspectRatio: 1.35,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: const Color(0xFF0B1020),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.cardBorder),
           ),
-          onTap: () => _navigateToDifficultySelect(),
-          delay: 0,
-        ),
-        const SizedBox(height: 16),
-        // Lumina Matrix (New)
-        GameModeCard(
-          title: 'Lumina Matrix',
-          description: 'Spatial memory training on a grid',
-          icon: LucideIcons.layoutGrid,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 92,
+                height: 92,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.surfaceLight,
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: const Icon(
+                  LucideIcons.waves,
+                  color: AppColors.textPrimary,
+                  size: 30,
+                ),
+              ),
+              for (var i = 0; i < colors.length; i++)
+                Align(
+                  alignment: [
+                    const Alignment(0, -0.82),
+                    const Alignment(0.82, -0.1),
+                    const Alignment(0.5, 0.78),
+                    const Alignment(-0.5, 0.78),
+                    const Alignment(-0.82, -0.1),
+                  ][i],
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: colors[i],
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors[i].withValues(alpha: 0.3),
+                          blurRadius: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
-          onTap: () => _navigateTo(const LuminaScreen()),
-          delay: 50,
-          badge: 'NEW',
         ),
-        const SizedBox(height: 16),
-        // Reflex Match (formerly Dual Core)
-        GameModeCard(
-          title: 'Reflex Match',
-          description: 'Same or Different? Test your reaction!',
-          icon: LucideIcons.zap,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF8E44AD), Color(0xFFBB6BD9)],
-          ),
-          onTap: () => _navigateTo(const NBackScreen()),
-          delay: 100,
-          badge: 'NEW',
-        ),
-        const SizedBox(height: 16),
-        // Echo Stream
-        GameModeCard(
-          title: 'Echo Stream',
-          description: 'Speed memory with flowing items',
-          icon: LucideIcons.waves,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF00B894), Color(0xFF55EFC4)],
-          ),
-          onTap: () => _navigateTo(const StreamScreen()),
-          delay: 150,
-          badge: 'NEW',
-        ),
-        const SizedBox(height: 16),
-        // Quantum Flux Mode
-        GameModeCard(
-          title: 'Quantum Flux',
-          description: 'Orbs shuffle positions! Watch the colors.',
-          icon: LucideIcons.shuffle,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2E3192), Color(0xFF1BFFFF)],
-          ),
-          onTap: () => _navigateToQuantumMode(),
-          delay: 200,
-        ),
-        const SizedBox(height: 16),
-        // Practice Mode
-        GameModeCard(
-          title: 'Practice Mode',
-          description: 'Learn at your own pace without time limits',
-          icon: LucideIcons.graduationCap,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF4ECDC4), Color(0xFF7EDFD8)],
-          ),
-          onTap: () => _navigateTo(const PracticeGameScreen()),
-          delay: 100,
-        ),
-        const SizedBox(height: 16),
-        // Daily Challenge
-        GameModeCard(
-          title: 'Daily Challenge',
-          description: 'New challenge every day',
-          icon: LucideIcons.calendar,
-          gradient: const LinearGradient(
-            colors: [Color(0xFFB794F6), Color(0xFFD4B8FF)],
-          ),
-          onTap: () => _navigateTo(const DailyChallengeScreen()),
-          delay: 200,
-          badge: 'NEW',
-        ),
-        const SizedBox(height: 16),
-        // Zen Mode
-        GameModeCard(
-          title: 'Zen Mode',
-          description: 'Relaxing infinite play',
-          icon: LucideIcons.leaf,
-          gradient: const LinearGradient(
-            colors: [Color(0xFF45B7D1), Color(0xFF74CAE0)],
-          ),
-          onTap: () => _navigateToZenMode(),
-          delay: 300,
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildBottomActions() {
+  Widget _buildModes() {
+    final modes = <Widget>[
+      GameModeCard(
+        title: 'Daily Challenge',
+        description: 'One seeded run each day. Make it count.',
+        icon: LucideIcons.calendarCheck,
+        gradient: const LinearGradient(
+          colors: [AppColors.orbPurple, Color(0xFF7C3AED)],
+        ),
+        badge: 'DAILY',
+        onTap: () => _navigateTo(const DailyChallengeScreen()),
+      ),
+      GameModeCard(
+        title: 'Practice',
+        description: 'No clock. Replay one pattern per round.',
+        icon: LucideIcons.graduationCap,
+        gradient: const LinearGradient(
+          colors: [AppColors.orbGreen, Color(0xFF0F766E)],
+        ),
+        onTap: () => _navigateTo(const PracticeGameScreen()),
+      ),
+      GameModeCard(
+        title: 'Lumina Matrix',
+        description: 'Recall illuminated positions on a growing grid.',
+        icon: LucideIcons.layoutGrid,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
+        ),
+        onTap: () => _navigateTo(const LuminaScreen()),
+      ),
+      GameModeCard(
+        title: 'Reflex Match',
+        description: 'Decide whether two cards match exactly.',
+        icon: LucideIcons.zap,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+        ),
+        onTap: () => _navigateTo(const NBackScreen()),
+      ),
+      GameModeCard(
+        title: 'Echo Stream',
+        description: 'Spot the missing symbol in a short visual stream.',
+        icon: LucideIcons.waves,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF06B6D4), Color(0xFF0369A1)],
+        ),
+        onTap: () => _navigateTo(const StreamScreen()),
+      ),
+      GameModeCard(
+        title: 'Quantum Flux',
+        description: 'Repeat the pattern after every signal moves.',
+        icon: LucideIcons.shuffle,
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEC4899), Color(0xFF9D174D)],
+        ),
+        badge: 'HARD',
+        onTap: () => _navigateTo(
+          const GameScreen(
+            difficulty: 'quantum',
+            settings: {
+              'initialSequence': 3,
+              'timeLimit': 10,
+              'pointMultiplier': 3,
+              'lives': 3,
+            },
+          ),
+        ),
+      ),
+      GameModeCard(
+        title: 'Zen Echo',
+        description: 'Endless recall without timers or lost lives.',
+        icon: LucideIcons.leaf,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF22C55E), Color(0xFF15803D)],
+        ),
+        onTap: () => _navigateTo(
+          const GameScreen(
+            difficulty: 'zen',
+            settings: {
+              'initialSequence': 3,
+              'timeLimit': 0,
+              'pointMultiplier': 1,
+              'lives': 999,
+            },
+          ),
+        ),
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 760 ? 2 : 1;
+        return GridView.count(
+          crossAxisCount: columns,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          mainAxisExtent: 118,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: modes,
+        );
+      },
+    );
+  }
+
+  Widget _buildPrivacyNote() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Achievements
-        _buildIconButton(
-          icon: LucideIcons.trophy,
-          label: 'Achievements',
-          onTap: () => _navigateTo(const AchievementsScreen()),
-        ).animate().fadeIn(delay: 600.ms).scale(delay: 600.ms),
-        const SizedBox(width: 24),
-        // Settings
-        _buildIconButton(
-          icon: LucideIcons.settings,
-          label: 'Settings',
-          onTap: () => _navigateTo(const SettingsScreen()),
-        ).animate().fadeIn(delay: 700.ms).scale(delay: 700.ms),
+        const Icon(
+          LucideIcons.shieldCheck,
+          size: 16,
+          color: AppColors.orbGreen,
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            'No ads • No account • No data collection',
+            style: AppTextStyles.bodySmall,
+            textAlign: TextAlign.center,
+          ),
+        ),
       ],
-    );
-  }
-
-  Widget _buildIconButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: GlassContainer(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        borderRadius: 16,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: AppColors.textSecondary,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: AppTextStyles.labelMedium,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _navigateTo(Widget screen) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => screen,
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.1, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-              )),
-              child: child,
-            ),
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
-  }
-
-  void _navigateToDifficultySelect() {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            const DifficultySelectScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    );
-  }
-
-  void _navigateToZenMode() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const GameScreen(
-          difficulty: 'zen',
-          settings: {
-            'initialSequence': 3,
-            'timeLimit': 0,
-            'pointMultiplier': 1,
-            'lives': 999,
-          },
-        ),
-      ),
-    );
-  }
-
-  void _navigateToQuantumMode() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const GameScreen(
-          difficulty: 'quantum',
-          settings: {
-            'initialSequence': 3,
-            'timeLimit': 10,
-            'pointMultiplier': 3, // High risk, high reward
-            'lives': 3,
-          },
-        ),
-      ),
     );
   }
 }
 
-/// Difficulty selection screen
 class DifficultySelectScreen extends StatelessWidget {
   const DifficultySelectScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    ResponsiveUtils.init(context);
-
     return Scaffold(
       body: GameGradientBackground(
+        showOverlay: false,
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                // Back button & title
-                Row(
-                  children: [
-                    GlassContainer(
-                      padding: const EdgeInsets.all(12),
-                      borderRadius: 12,
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(
-                        LucideIcons.arrowLeft,
-                        color: AppColors.textPrimary,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620),
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  Row(
+                    children: [
+                      SizedBox.square(
+                        dimension: 48,
+                        child: IconButton.filledTonal(
+                          tooltip: 'Back',
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(LucideIcons.arrowLeft, size: 20),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      'Select Difficulty',
-                      style: AppTextStyles.headlineMedium,
-                    ),
-                  ],
-                ).animate().fadeIn().slideX(begin: -0.2, end: 0),
-                const Spacer(),
-                // Difficulty options
-                _buildDifficultyCard(
-                  context,
-                  title: 'Beginner',
-                  description: 'Perfect for learning',
-                  color: AppColors.difficultyBeginner,
-                  icon: LucideIcons.star,
-                  settings: {
-                    'initialSequence': 3,
-                    'timeLimit': 12,
-                    'pointMultiplier': 1,
-                    'lives': 3,
-                  },
-                  delay: 0,
-                ),
-                const SizedBox(height: 16),
-                _buildDifficultyCard(
-                  context,
-                  title: 'Expert',
-                  description: 'For experienced players',
-                  color: AppColors.difficultyExpert,
-                  icon: LucideIcons.zap,
-                  settings: {
-                    'initialSequence': 4,
-                    'timeLimit': 8,
-                    'pointMultiplier': 2,
-                    'lives': 2,
-                  },
-                  delay: 100,
-                ),
-                const SizedBox(height: 16),
-                _buildDifficultyCard(
-                  context,
-                  title: 'Master',
-                  description: 'Ultimate challenge',
-                  color: AppColors.difficultyMaster,
-                  icon: LucideIcons.skull,
-                  settings: {
-                    'initialSequence': 5,
-                    'timeLimit': 5,
-                    'pointMultiplier': 3,
-                    'lives': 1,
-                  },
-                  delay: 200,
-                ),
-                const Spacer(),
-              ],
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Classic Echo',
+                              style: AppTextStyles.headlineMedium,
+                            ),
+                            Text(
+                              'Choose the pace that feels challenging.',
+                              style: AppTextStyles.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+                  _difficultyCard(
+                    context,
+                    id: 'beginner',
+                    icon: LucideIcons.sprout,
+                    color: AppColors.difficultyBeginner,
+                  ),
+                  const SizedBox(height: 12),
+                  _difficultyCard(
+                    context,
+                    id: 'expert',
+                    icon: LucideIcons.zap,
+                    color: AppColors.difficultyExpert,
+                  ),
+                  const SizedBox(height: 12),
+                  _difficultyCard(
+                    context,
+                    id: 'master',
+                    icon: LucideIcons.flame,
+                    color: AppColors.difficultyMaster,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -445,73 +491,109 @@ class DifficultySelectScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDifficultyCard(
+  Widget _difficultyCard(
     BuildContext context, {
-    required String title,
-    required String description,
-    required Color color,
+    required String id,
     required IconData icon,
-    required Map<String, int> settings,
-    required int delay,
+    required Color color,
   }) {
-    return GestureDetector(
+    final difficulty = GameConstants.difficulties[id]!;
+    return GlassContainer(
       onTap: () {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => GameScreen(
-              difficulty: title.toLowerCase(),
-              settings: settings,
+            builder: (_) => GameScreen(
+              difficulty: id,
+              settings: {
+                'initialSequence': difficulty.initialSequence,
+                'timeLimit': difficulty.timeLimit,
+                'pointMultiplier': difficulty.pointMultiplier,
+                'lives': difficulty.lives,
+              },
             ),
           ),
         );
       },
-      child: GlassContainer(
-        padding: const EdgeInsets.all(20),
-        child: Row(
+      padding: const EdgeInsets.all(18),
+      backgroundColor: AppColors.surface.withValues(alpha: 0.88),
+      borderColor: color.withValues(alpha: 0.3),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Icon(icon, color: color, size: 25),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(difficulty.name, style: AppTextStyles.titleMedium),
+                const SizedBox(height: 3),
+                Text(
+                  '${difficulty.description} • ${difficulty.timeLimit}s • ${difficulty.lives} lives',
+                  style: AppTextStyles.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          Icon(LucideIcons.chevronRight, color: color, size: 20),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _SectionTitle({required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(child: Text(title, style: AppTextStyles.headlineSmall)),
+        const SizedBox(width: 12),
+        Text(subtitle, style: AppTextStyles.bodySmall),
+      ],
+    );
+  }
+}
+
+class _InlineStat extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InlineStat({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$label $value',
+      child: RichText(
+        text: TextSpan(
+          style: AppTextStyles.labelMedium,
           children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color.withOpacity(0.2),
-                border: Border.all(color: color.withOpacity(0.5)),
-                boxShadow: [
-                  BoxShadow(
-                    color: color.withOpacity(0.3),
-                    blurRadius: 15,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: color, size: 30),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.titleLarge.copyWith(color: color),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: AppTextStyles.bodyMedium,
-                  ),
-                ],
+            TextSpan(
+              text: value,
+              style: AppTextStyles.labelLarge.copyWith(
+                color: AppColors.textPrimary,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
-            Icon(
-              LucideIcons.chevronRight,
-              color: AppColors.textMuted,
-              size: 20,
-            ),
+            TextSpan(text: '  $label'),
           ],
         ),
       ),
-    ).animate().fadeIn(delay: delay.ms).slideX(begin: 0.1, end: 0);
+    );
   }
 }

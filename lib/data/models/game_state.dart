@@ -1,5 +1,7 @@
 /// Game state model for Echo Memory
 /// Tracks all game-related state during gameplay
+library;
+
 import 'package:flutter/material.dart';
 
 enum GameStatus {
@@ -86,8 +88,7 @@ class GameState {
       currentIndex < sequence.length ? sequence[currentIndex] : null;
 
   /// Get progress as a percentage
-  double get progress =>
-      sequence.isEmpty ? 0 : currentIndex / sequence.length;
+  double get progress => sequence.isEmpty ? 0 : currentIndex / sequence.length;
 
   /// Get combo text based on current streak
   String? get comboText {
@@ -104,10 +105,7 @@ class GameState {
   }
 
   static GameState initial({int lives = 3}) {
-    return GameState(
-      lives: lives,
-      startTime: DateTime.now(),
-    );
+    return GameState(lives: lives, startTime: DateTime.now());
   }
 }
 

@@ -5,13 +5,14 @@ class AssetPaths {
 
   // Sound Effects
   static const String soundsPath = 'assets/sounds/';
-  
+
   static const String soundColorRed = '${soundsPath}color_red.mp3';
   static const String soundColorGreen = '${soundsPath}color_green.mp3';
   static const String soundColorBlue = '${soundsPath}color_blue.mp3';
   static const String soundColorYellow = '${soundsPath}color_yellow.mp3';
-  static const String soundColorPurple = '${soundsPath}color_purple.mp3'; // New!
-  
+  static const String soundColorPurple =
+      '${soundsPath}color_purple.mp3'; // New!
+
   static const String soundCorrect = '${soundsPath}correct.mp3';
   static const String soundWrong = '${soundsPath}wrong.mp3';
   static const String soundVictory = '${soundsPath}victory.mp3';
@@ -32,10 +33,10 @@ class AssetPaths {
 
   // Images
   static const String imagesPath = 'assets/images/';
-  
+
   // Icons
   static const String iconsPath = 'assets/icons/';
-  
+
   // Animations (Lottie)
   static const String animationsPath = 'assets/animations/';
   static const String animConfetti = '${animationsPath}confetti.json';

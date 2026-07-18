@@ -1,8 +1,10 @@
 /// Tutorial Overlay Widget for Echo Memory
 /// A reusable step-based tutorial system with animated transitions
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../config/theme/app_colors.dart';
 import '../../config/theme/app_text_styles.dart';
 import 'glass_container.dart';
@@ -49,7 +51,7 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
 
   void _nextStep() {
     if (_animating) return;
-    
+
     if (_currentStep < widget.steps.length - 1) {
       setState(() {
         _animating = true;
@@ -65,7 +67,7 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
 
   void _previousStep() {
     if (_animating || _currentStep == 0) return;
-    
+
     setState(() {
       _animating = true;
       _currentStep--;
@@ -81,13 +83,13 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
     final isLastStep = _currentStep == widget.steps.length - 1;
 
     return Container(
-      color: Colors.black.withOpacity(0.9),
+      color: Colors.black.withValues(alpha: 0.9),
       child: SafeArea(
         child: Column(
           children: [
             // Header with skip button
             _buildHeader(),
-            
+
             // Main content area
             Expanded(
               child: Padding(
@@ -95,11 +97,11 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                 child: Column(
                   children: [
                     const Spacer(flex: 1),
-                    
+
                     // Step title with icon
                     _buildStepTitle(step),
                     const SizedBox(height: 24),
-                    
+
                     // Animated demo area (wrapped in RepaintBoundary for performance)
                     RepaintBoundary(
                       child: Container(
@@ -116,27 +118,28 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                         ),
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Description
                     Text(
-                      step.description,
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: AppColors.textSecondary,
-                        height: 1.5,
-                      ),
-                      textAlign: TextAlign.center,
-                    ).animate(key: ValueKey('desc_$_currentStep'))
+                          step.description,
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        )
+                        .animate(key: ValueKey('desc_$_currentStep'))
                         .fadeIn(duration: 300.ms)
                         .slideY(begin: 0.1, end: 0),
-                    
+
                     const Spacer(flex: 2),
                   ],
                 ),
               ),
             ),
-            
+
             // Bottom navigation
             _buildBottomNav(isLastStep),
           ],
@@ -177,21 +180,22 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
 
   Widget _buildStepTitle(TutorialStep step) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (step.icon != null) ...[
-          Icon(step.icon, color: widget.accentColor, size: 28),
-          const SizedBox(width: 12),
-        ],
-        Text(
-          step.title,
-          style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ],
-    ).animate(key: ValueKey('title_$_currentStep'))
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (step.icon != null) ...[
+              Icon(step.icon, color: widget.accentColor, size: 28),
+              const SizedBox(width: 12),
+            ],
+            Text(
+              step.title,
+              style: AppTextStyles.headlineMedium.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        )
+        .animate(key: ValueKey('title_$_currentStep'))
         .fadeIn(duration: 300.ms)
         .slideY(begin: -0.1, end: 0);
   }
@@ -213,16 +217,16 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                 width: isActive ? 24 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: isActive 
-                      ? widget.accentColor 
-                      : AppColors.textMuted.withOpacity(0.3),
+                  color: isActive
+                      ? widget.accentColor
+                      : AppColors.textMuted.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
             }),
           ),
           const SizedBox(height: 24),
-          
+
           // Navigation buttons
           Row(
             children: [
@@ -236,7 +240,11 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(LucideIcons.arrowLeft, color: AppColors.textSecondary, size: 20),
+                        const Icon(
+                          LucideIcons.arrowLeft,
+                          color: AppColors.textSecondary,
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
                         Text('Back', style: AppTextStyles.labelLarge),
                       ],
@@ -245,9 +253,9 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                 )
               else
                 const Spacer(),
-              
+
               const SizedBox(width: 16),
-              
+
               // Next/Start button
               Expanded(
                 flex: 2,
@@ -259,13 +267,13 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                       gradient: LinearGradient(
                         colors: [
                           widget.accentColor,
-                          widget.accentColor.withOpacity(0.7),
+                          widget.accentColor.withValues(alpha: 0.7),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: widget.accentColor.withOpacity(0.4),
+                          color: widget.accentColor.withValues(alpha: 0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 5),
                         ),
@@ -283,7 +291,9 @@ class _TutorialOverlayState extends State<TutorialOverlay> {
                         ),
                         const SizedBox(width: 8),
                         Icon(
-                          isLastStep ? LucideIcons.play : LucideIcons.arrowRight,
+                          isLastStep
+                              ? LucideIcons.play
+                              : LucideIcons.arrowRight,
                           color: Colors.white,
                           size: 20,
                         ),

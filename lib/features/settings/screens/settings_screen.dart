@@ -1,15 +1,14 @@
 /// Settings screen for Echo Memory
 /// Game configuration and preferences
-import 'dart:io';
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_text_styles.dart';
-import '../../../core/services/sound_service.dart';
 import '../../../core/services/haptic_service.dart';
+import '../../../core/services/storage_service.dart';
 import '../../../shared/widgets/animated_gradient.dart';
 import '../../../shared/widgets/glass_container.dart';
 
@@ -21,50 +20,45 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final SoundService _soundService = SoundService();
   final HapticService _hapticService = HapticService();
+  final StorageService _storageService = StorageService();
 
-  bool _soundEnabled = true;
   bool _hapticEnabled = true;
-  String _selectedTheme = 'aurora';
-  String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
-    _soundEnabled = _soundService.isEnabled;
     _hapticEnabled = _hapticService.isEnabled;
-    _loadAppVersion();
+    _loadPreferences();
   }
 
-  Future<void> _loadAppVersion() async {
-    final packageInfo = await PackageInfo.fromPlatform();
+  Future<void> _loadPreferences() async {
+    final hapticEnabled = await _storageService.getHapticEnabled();
     if (mounted) {
-      setState(() => _appVersion = packageInfo.version);
+      setState(() => _hapticEnabled = hapticEnabled);
+      _hapticService.toggleHaptics(hapticEnabled);
     }
   }
 
-  Future<void> _launchPrivacyPolicy() async {
-    final uri = Uri.parse('https://echo-memory-one.vercel.app/privacy-policy.html');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Future<void> _launchRateApp() async {
-    final String url;
-    if (Platform.isAndroid) {
-      url = 'https://play.google.com/store/apps/details?id=com.pixel.peak.second';
-    } else if (Platform.isIOS) {
-      // Update with your actual App Store ID when available
-      url = 'https://apps.apple.com/app/echo-memory/id6740020285';
-    } else {
-      return;
-    }
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+  void _showPrivacyPolicy() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Privacy at a glance'),
+        content: const Text(
+          'Echo Memory is fully offline. It does not create an account, show '
+          'ads, use analytics, or collect or share personal data. Scores, '
+          'settings, and progress stay on this device and are removed when '
+          'the app data is cleared.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -84,48 +78,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSection('Sound & Haptics', [
-                          _buildSwitchTile(
-                            title: 'Sound Effects',
-                            subtitle: 'Game sounds and music',
-                            icon: LucideIcons.volume2,
-                            value: _soundEnabled,
-                            onChanged: (value) {
-                              setState(() => _soundEnabled = value);
-                              _soundService.toggleSound(value);
-                            },
-                          ),
+                        _buildSection('Game feedback', [
                           _buildSwitchTile(
                             title: 'Haptic Feedback',
-                            subtitle: 'Vibration on interactions',
+                            subtitle: 'Tactile cues for taps and results',
                             icon: LucideIcons.smartphone,
                             value: _hapticEnabled,
-                            onChanged: (value) {
+                            onChanged: (value) async {
                               setState(() => _hapticEnabled = value);
                               _hapticService.toggleHaptics(value);
+                              await _storageService.setHapticEnabled(value);
                             },
                           ),
-                        ]),
-                        const SizedBox(height: 24),
-                        _buildSection('Theme', [
-                          _buildThemeSelector(),
                         ]),
                         const SizedBox(height: 24),
                         _buildSection('About', [
                           _buildInfoTile(
-                            title: 'Version',
-                            value: _appVersion.isEmpty ? '...' : _appVersion,
-                            icon: LucideIcons.info,
+                            title: 'Offline edition',
+                            value: '2.1.0',
+                            icon: LucideIcons.wifiOff,
                           ),
                           _buildActionTile(
                             title: 'Privacy Policy',
                             icon: LucideIcons.shieldCheck,
-                            onTap: _launchPrivacyPolicy,
-                          ),
-                          _buildActionTile(
-                            title: 'Rate App',
-                            icon: LucideIcons.star,
-                            onTap: _launchRateApp,
+                            onTap: _showPrivacyPolicy,
                           ),
                         ]),
                       ],
@@ -154,10 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         const SizedBox(width: 16),
-        Text(
-          'Settings',
-          style: AppTextStyles.headlineMedium,
-        ),
+        Text('Settings', style: AppTextStyles.headlineMedium),
       ],
     ).animate().fadeIn().slideX(begin: -0.2, end: 0);
   }
@@ -184,10 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   children[index],
                   if (index < children.length - 1)
-                    Divider(
-                      color: AppColors.glassBorder,
-                      height: 1,
-                    ),
+                    Divider(color: AppColors.glassBorder, height: 1),
                 ],
               );
             }),
@@ -212,7 +182,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.orbBlue.withOpacity(0.2),
+              color: AppColors.orbBlue.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: AppColors.orbBlue, size: 22),
@@ -230,7 +200,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.orbGreen,
+            activeThumbColor: AppColors.orbGreen,
+            activeTrackColor: AppColors.orbGreen.withValues(alpha: 0.35),
           ),
         ],
       ),
@@ -250,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.textMuted.withOpacity(0.2),
+              color: AppColors.textMuted.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: AppColors.textMuted, size: 22),
@@ -278,7 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.textMuted.withOpacity(0.2),
+                color: AppColors.textMuted.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: AppColors.textMuted, size: 22),
@@ -292,64 +263,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildThemeSelector() {
-    final themes = [
-      ('aurora', 'Aurora', AppColors.auroraGradient),
-      ('neon', 'Neon', AppColors.themeGradients['neon']!),
-      ('ocean', 'Ocean', AppColors.themeGradients['ocean']!),
-      ('space', 'Space', AppColors.themeGradients['space']!),
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: themes.map((theme) {
-          final isSelected = _selectedTheme == theme.$1;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedTheme = theme.$1),
-            child: Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(colors: theme.$3),
-                border: isSelected
-                    ? Border.all(color: Colors.white, width: 3)
-                    : null,
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: theme.$3.first.withOpacity(0.5),
-                          blurRadius: 15,
-                          spreadRadius: 2,
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isSelected)
-                    const Icon(LucideIcons.check,
-                        color: Colors.white, size: 24)
-                  else
-                    Text(
-                      theme.$2,
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }

@@ -1,5 +1,7 @@
 /// App color palette and gradients for Echo Memory
 /// A premium, vibrant color system with aurora-inspired themes
+library;
+
 import 'package:flutter/material.dart';
 
 class AppColors {
@@ -43,7 +45,9 @@ class AppColors {
   static const Color orbBlueGlow = Color(0xFF74CAE0);
   static const Color orbYellow = Color(0xFFFFE66D);
   static const Color orbYellowGlow = Color(0xFFFFF09D);
-  static const Color orbPurple = Color(0xFFB794F6); // Replaced black with purple!
+  static const Color orbPurple = Color(
+    0xFFB794F6,
+  ); // Replaced black with purple!
   static const Color orbPurpleGlow = Color(0xFFD4B8FF);
 
   // Game Orb List (for game logic)
@@ -87,8 +91,8 @@ class AppColors {
   static const Color comboLegendary = Color(0xFFFFD700); // 10-streak
 
   // Glassmorphism
-  static Color glassBackground = Colors.white.withOpacity(0.1);
-  static Color glassBorder = Colors.white.withOpacity(0.2);
+  static Color glassBackground = Colors.white.withValues(alpha: 0.1);
+  static Color glassBorder = Colors.white.withValues(alpha: 0.2);
 
   // Power-up Colors
   static const Color powerUpSlowMo = Color(0xFF45B7D1);
@@ -116,11 +120,7 @@ class AppColors {
     final color = gameOrbs[index % gameOrbs.length];
     final glowColor = gameOrbGlows[index % gameOrbGlows.length];
     return RadialGradient(
-      colors: [
-        glowColor,
-        color,
-        color.withOpacity(0.8),
-      ],
+      colors: [glowColor, color, color.withValues(alpha: 0.8)],
       stops: const [0.0, 0.4, 1.0],
     );
   }

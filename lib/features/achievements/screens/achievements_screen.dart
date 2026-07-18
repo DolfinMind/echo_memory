@@ -1,8 +1,10 @@
 /// Achievements screen for Echo Memory
 /// Display all achievements and progress
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_text_styles.dart';
 import '../../../data/models/achievement.dart';
@@ -18,7 +20,7 @@ class AchievementsScreen extends StatefulWidget {
 
 class _AchievementsScreenState extends State<AchievementsScreen> {
   AchievementCategory _selectedCategory = AchievementCategory.gameplay;
-  AchievementProgress _progress = const AchievementProgress();
+  final AchievementProgress _progress = const AchievementProgress();
 
   @override
   Widget build(BuildContext context) {
@@ -76,8 +78,10 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
               children: [
                 CircularProgressIndicator(
                   value: _progress.completionPercentage,
-                  backgroundColor: AppColors.textMuted.withOpacity(0.2),
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.accentGold),
+                  backgroundColor: AppColors.textMuted.withValues(alpha: 0.2),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.accentGold,
+                  ),
                   strokeWidth: 4,
                 ),
                 Text(
@@ -119,7 +123,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.orbBlue.withOpacity(0.3)
+                      ? AppColors.orbBlue.withValues(alpha: 0.3)
                       : AppColors.glassBackground,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
@@ -182,16 +186,15 @@ class _AchievementCard extends StatelessWidget {
   final Achievement achievement;
   final bool isUnlocked;
 
-  const _AchievementCard({
-    required this.achievement,
-    required this.isUnlocked,
-  });
+  const _AchievementCard({required this.achievement, required this.isUnlocked});
 
   @override
   Widget build(BuildContext context) {
     return GlassContainer(
       padding: const EdgeInsets.all(16),
-      borderColor: isUnlocked ? achievement.rarityColor.withOpacity(0.5) : null,
+      borderColor: isUnlocked
+          ? achievement.rarityColor.withValues(alpha: 0.5)
+          : null,
       child: Row(
         children: [
           // Icon container
@@ -200,12 +203,14 @@ class _AchievementCard extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               gradient: isUnlocked ? achievement.rarityGradient : null,
-              color: isUnlocked ? null : AppColors.textMuted.withOpacity(0.2),
+              color: isUnlocked
+                  ? null
+                  : AppColors.textMuted.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(14),
               boxShadow: isUnlocked
                   ? [
                       BoxShadow(
-                        color: achievement.rarityColor.withOpacity(0.3),
+                        color: achievement.rarityColor.withValues(alpha: 0.3),
                         blurRadius: 10,
                         spreadRadius: 1,
                       ),
@@ -244,8 +249,8 @@ class _AchievementCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: isUnlocked
-                            ? achievement.rarityColor.withOpacity(0.2)
-                            : AppColors.textMuted.withOpacity(0.1),
+                            ? achievement.rarityColor.withValues(alpha: 0.2)
+                            : AppColors.textMuted.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -267,14 +272,14 @@ class _AchievementCard extends StatelessWidget {
                   style: AppTextStyles.bodySmall.copyWith(
                     color: isUnlocked
                         ? AppColors.textSecondary
-                        : AppColors.textMuted.withOpacity(0.6),
+                        : AppColors.textMuted.withValues(alpha: 0.6),
                   ),
                 ),
                 if (achievement.reward != null && isUnlocked) ...[
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         LucideIcons.gift,
                         size: 14,
                         color: AppColors.accentGold,

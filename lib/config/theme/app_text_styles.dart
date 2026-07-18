@@ -1,5 +1,7 @@
 /// App typography system for Echo Memory
 /// Modern, clean font styles with responsive sizing
+library;
+
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
@@ -147,11 +149,7 @@ class AppTextStyles {
     color: AppColors.accentGold,
     letterSpacing: 2,
     shadows: [
-      Shadow(
-        color: Color(0x80FFD700),
-        blurRadius: 20,
-        offset: Offset(0, 0),
-      ),
+      Shadow(color: Color(0x80FFD700), blurRadius: 20, offset: Offset(0, 0)),
     ],
   );
 
@@ -194,12 +192,12 @@ class AppTextStyles {
     letterSpacing: -1,
     shadows: [
       Shadow(
-        color: AppColors.orbBlue.withOpacity(0.5),
+        color: AppColors.orbBlue.withValues(alpha: 0.5),
         blurRadius: 20,
         offset: const Offset(0, 0),
       ),
       Shadow(
-        color: AppColors.orbPurple.withOpacity(0.3),
+        color: AppColors.orbPurple.withValues(alpha: 0.3),
         blurRadius: 40,
         offset: const Offset(0, 0),
       ),
@@ -221,7 +219,7 @@ class AppTextStyles {
     return base.copyWith(
       shadows: [
         Shadow(
-          color: glowColor.withOpacity(0.6),
+          color: glowColor.withValues(alpha: 0.6),
           blurRadius: 15,
           offset: const Offset(0, 0),
         ),

@@ -1,25 +1,15 @@
 /// Achievement model for Echo Memory
 /// Defines achievements, badges, and unlockables
+library;
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../config/theme/app_colors.dart';
 
-enum AchievementRarity {
-  bronze,
-  silver,
-  gold,
-  platinum,
-  diamond,
-}
+enum AchievementRarity { bronze, silver, gold, platinum, diamond }
 
-enum AchievementCategory {
-  gameplay,
-  streak,
-  score,
-  daily,
-  special,
-}
+enum AchievementCategory { gameplay, streak, score, daily, special }
 
 class Achievement {
   final String id;
@@ -105,189 +95,189 @@ class Achievement {
 
   /// All achievements
   static List<Achievement> get allAchievements => [
-        // Gameplay Achievements
-        const Achievement(
-          id: 'first_steps',
-          name: 'First Steps',
-          description: 'Complete your first game',
-          icon: LucideIcons.flag,
-          rarity: AchievementRarity.bronze,
-          category: AchievementCategory.gameplay,
-          requirement: 1,
-        ),
-        const Achievement(
-          id: 'getting_started',
-          name: 'Getting Started',
-          description: 'Play 10 games',
-          icon: LucideIcons.play,
-          rarity: AchievementRarity.bronze,
-          category: AchievementCategory.gameplay,
-          requirement: 10,
-        ),
-        const Achievement(
-          id: 'dedicated_player',
-          name: 'Dedicated Player',
-          description: 'Play 50 games',
-          icon: LucideIcons.gamepad2,
-          rarity: AchievementRarity.silver,
-          category: AchievementCategory.gameplay,
-          requirement: 50,
-        ),
-        const Achievement(
-          id: 'veteran',
-          name: 'Veteran',
-          description: 'Play 100 games',
-          icon: LucideIcons.medal,
-          rarity: AchievementRarity.gold,
-          category: AchievementCategory.gameplay,
-          requirement: 100,
-        ),
+    // Gameplay Achievements
+    const Achievement(
+      id: 'first_steps',
+      name: 'First Steps',
+      description: 'Complete your first game',
+      icon: LucideIcons.flag,
+      rarity: AchievementRarity.bronze,
+      category: AchievementCategory.gameplay,
+      requirement: 1,
+    ),
+    const Achievement(
+      id: 'getting_started',
+      name: 'Getting Started',
+      description: 'Play 10 games',
+      icon: LucideIcons.play,
+      rarity: AchievementRarity.bronze,
+      category: AchievementCategory.gameplay,
+      requirement: 10,
+    ),
+    const Achievement(
+      id: 'dedicated_player',
+      name: 'Dedicated Player',
+      description: 'Play 50 games',
+      icon: LucideIcons.gamepad2,
+      rarity: AchievementRarity.silver,
+      category: AchievementCategory.gameplay,
+      requirement: 50,
+    ),
+    const Achievement(
+      id: 'veteran',
+      name: 'Veteran',
+      description: 'Play 100 games',
+      icon: LucideIcons.medal,
+      rarity: AchievementRarity.gold,
+      category: AchievementCategory.gameplay,
+      requirement: 100,
+    ),
 
-        // Streak Achievements
-        const Achievement(
-          id: 'on_a_roll',
-          name: 'On a Roll',
-          description: 'Get a 5-streak',
-          icon: LucideIcons.flame,
-          rarity: AchievementRarity.bronze,
-          category: AchievementCategory.streak,
-          requirement: 5,
-        ),
-        const Achievement(
-          id: 'hot_streak',
-          name: 'Hot Streak',
-          description: 'Get a 10-streak',
-          icon: LucideIcons.flame,
-          rarity: AchievementRarity.silver,
-          category: AchievementCategory.streak,
-          requirement: 10,
-        ),
-        const Achievement(
-          id: 'streak_king',
-          name: 'Streak King',
-          description: 'Get a 15-streak',
-          icon: LucideIcons.sparkles,
-          rarity: AchievementRarity.gold,
-          category: AchievementCategory.streak,
-          requirement: 15,
-          reward: 'crown_icon',
-        ),
-        const Achievement(
-          id: 'unstoppable',
-          name: 'Unstoppable',
-          description: 'Get a 25-streak',
-          icon: LucideIcons.zap,
-          rarity: AchievementRarity.diamond,
-          category: AchievementCategory.streak,
-          requirement: 25,
-        ),
+    // Streak Achievements
+    const Achievement(
+      id: 'on_a_roll',
+      name: 'On a Roll',
+      description: 'Get a 5-streak',
+      icon: LucideIcons.flame,
+      rarity: AchievementRarity.bronze,
+      category: AchievementCategory.streak,
+      requirement: 5,
+    ),
+    const Achievement(
+      id: 'hot_streak',
+      name: 'Hot Streak',
+      description: 'Get a 10-streak',
+      icon: LucideIcons.flame,
+      rarity: AchievementRarity.silver,
+      category: AchievementCategory.streak,
+      requirement: 10,
+    ),
+    const Achievement(
+      id: 'streak_king',
+      name: 'Streak King',
+      description: 'Get a 15-streak',
+      icon: LucideIcons.sparkles,
+      rarity: AchievementRarity.gold,
+      category: AchievementCategory.streak,
+      requirement: 15,
+      reward: 'crown_icon',
+    ),
+    const Achievement(
+      id: 'unstoppable',
+      name: 'Unstoppable',
+      description: 'Get a 25-streak',
+      icon: LucideIcons.zap,
+      rarity: AchievementRarity.diamond,
+      category: AchievementCategory.streak,
+      requirement: 25,
+    ),
 
-        // Score Achievements
-        const Achievement(
-          id: 'score_100',
-          name: 'Point Scorer',
-          description: 'Score 100 points in a game',
-          icon: LucideIcons.star,
-          rarity: AchievementRarity.bronze,
-          category: AchievementCategory.score,
-          requirement: 100,
-        ),
-        const Achievement(
-          id: 'score_500',
-          name: 'High Scorer',
-          description: 'Score 500 points in a game',
-          icon: LucideIcons.trendingUp,
-          rarity: AchievementRarity.silver,
-          category: AchievementCategory.score,
-          requirement: 500,
-        ),
-        const Achievement(
-          id: 'score_1000',
-          name: 'Score Master',
-          description: 'Score 1000 points in a game',
-          icon: LucideIcons.trophy,
-          rarity: AchievementRarity.gold,
-          category: AchievementCategory.score,
-          requirement: 1000,
-        ),
-        const Achievement(
-          id: 'score_5000',
-          name: 'Legendary Score',
-          description: 'Score 5000 points in a game',
-          icon: LucideIcons.award,
-          rarity: AchievementRarity.diamond,
-          category: AchievementCategory.score,
-          requirement: 5000,
-        ),
+    // Score Achievements
+    const Achievement(
+      id: 'score_100',
+      name: 'Point Scorer',
+      description: 'Score 100 points in a game',
+      icon: LucideIcons.star,
+      rarity: AchievementRarity.bronze,
+      category: AchievementCategory.score,
+      requirement: 100,
+    ),
+    const Achievement(
+      id: 'score_500',
+      name: 'High Scorer',
+      description: 'Score 500 points in a game',
+      icon: LucideIcons.trendingUp,
+      rarity: AchievementRarity.silver,
+      category: AchievementCategory.score,
+      requirement: 500,
+    ),
+    const Achievement(
+      id: 'score_1000',
+      name: 'Score Master',
+      description: 'Score 1000 points in a game',
+      icon: LucideIcons.trophy,
+      rarity: AchievementRarity.gold,
+      category: AchievementCategory.score,
+      requirement: 1000,
+    ),
+    const Achievement(
+      id: 'score_5000',
+      name: 'Legendary Score',
+      description: 'Score 5000 points in a game',
+      icon: LucideIcons.award,
+      rarity: AchievementRarity.diamond,
+      category: AchievementCategory.score,
+      requirement: 5000,
+    ),
 
-        // Daily Achievements
-        const Achievement(
-          id: 'daily_first',
-          name: 'Daily Challenger',
-          description: 'Complete your first daily challenge',
-          icon: LucideIcons.calendar,
-          rarity: AchievementRarity.bronze,
-          category: AchievementCategory.daily,
-          requirement: 1,
-        ),
-        const Achievement(
-          id: 'daily_week',
-          name: 'Perfect Week',
-          description: 'Complete 7 daily challenges in a row',
-          icon: LucideIcons.calendarDays,
-          rarity: AchievementRarity.gold,
-          category: AchievementCategory.daily,
-          requirement: 7,
-          reward: 'gold_theme',
-        ),
-        const Achievement(
-          id: 'daily_month',
-          name: 'Monthly Master',
-          description: 'Complete 30 daily challenges',
-          icon: LucideIcons.calendarCheck,
-          rarity: AchievementRarity.platinum,
-          category: AchievementCategory.daily,
-          requirement: 30,
-        ),
+    // Daily Achievements
+    const Achievement(
+      id: 'daily_first',
+      name: 'Daily Challenger',
+      description: 'Complete your first daily challenge',
+      icon: LucideIcons.calendar,
+      rarity: AchievementRarity.bronze,
+      category: AchievementCategory.daily,
+      requirement: 1,
+    ),
+    const Achievement(
+      id: 'daily_week',
+      name: 'Perfect Week',
+      description: 'Complete 7 daily challenges in a row',
+      icon: LucideIcons.calendarDays,
+      rarity: AchievementRarity.gold,
+      category: AchievementCategory.daily,
+      requirement: 7,
+      reward: 'gold_theme',
+    ),
+    const Achievement(
+      id: 'daily_month',
+      name: 'Monthly Master',
+      description: 'Complete 30 daily challenges',
+      icon: LucideIcons.calendarCheck,
+      rarity: AchievementRarity.platinum,
+      category: AchievementCategory.daily,
+      requirement: 30,
+    ),
 
-        // Special Achievements
-        const Achievement(
-          id: 'speed_demon',
-          name: 'Speed Demon',
-          description: 'Complete a sequence in under 2 seconds',
-          icon: LucideIcons.gauge,
-          rarity: AchievementRarity.silver,
-          category: AchievementCategory.special,
-          requirement: 2,
-        ),
-        const Achievement(
-          id: 'memory_master',
-          name: 'Memory Master',
-          description: 'Remember a 20-color sequence',
-          icon: LucideIcons.brain,
-          rarity: AchievementRarity.platinum,
-          category: AchievementCategory.special,
-          requirement: 20,
-        ),
-        const Achievement(
-          id: 'untouchable',
-          name: 'Untouchable',
-          description: 'Complete Master difficulty without losing a life',
-          icon: LucideIcons.shield,
-          rarity: AchievementRarity.diamond,
-          category: AchievementCategory.special,
-          requirement: 1,
-        ),
-        const Achievement(
-          id: 'perfectionist',
-          name: 'Perfectionist',
-          description: 'Achieve 100% accuracy in 10 games',
-          icon: LucideIcons.badgeCheck,
-          rarity: AchievementRarity.gold,
-          category: AchievementCategory.special,
-          requirement: 10,
-        ),
-      ];
+    // Special Achievements
+    const Achievement(
+      id: 'speed_demon',
+      name: 'Speed Demon',
+      description: 'Complete a sequence in under 2 seconds',
+      icon: LucideIcons.gauge,
+      rarity: AchievementRarity.silver,
+      category: AchievementCategory.special,
+      requirement: 2,
+    ),
+    const Achievement(
+      id: 'memory_master',
+      name: 'Memory Master',
+      description: 'Remember a 20-color sequence',
+      icon: LucideIcons.brain,
+      rarity: AchievementRarity.platinum,
+      category: AchievementCategory.special,
+      requirement: 20,
+    ),
+    const Achievement(
+      id: 'untouchable',
+      name: 'Untouchable',
+      description: 'Complete Master difficulty without losing a life',
+      icon: LucideIcons.shield,
+      rarity: AchievementRarity.diamond,
+      category: AchievementCategory.special,
+      requirement: 1,
+    ),
+    const Achievement(
+      id: 'perfectionist',
+      name: 'Perfectionist',
+      description: 'Achieve 100% accuracy in 10 games',
+      icon: LucideIcons.badgeCheck,
+      rarity: AchievementRarity.gold,
+      category: AchievementCategory.special,
+      requirement: 10,
+    ),
+  ];
 
   /// Get achievement by ID
   static Achievement? getById(String id) {
@@ -359,10 +349,7 @@ class AchievementProgress {
     final newDates = Map<String, DateTime>.from(unlockedDates);
     newUnlocked[id] = true;
     newDates[id] = DateTime.now();
-    return AchievementProgress(
-      unlocked: newUnlocked,
-      unlockedDates: newDates,
-    );
+    return AchievementProgress(unlocked: newUnlocked, unlockedDates: newDates);
   }
 
   /// Convert to JSON

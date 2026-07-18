@@ -1,9 +1,10 @@
 /// Animated Demo Widgets for Echo Memory Tutorials
 /// Pre-built, performance-optimized animated demonstrations
-import 'dart:math' as math;
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../config/theme/app_colors.dart';
 
 /// Animated orb demo for Classic Echo tutorial
@@ -11,38 +12,30 @@ class OrbSequenceDemo extends StatefulWidget {
   final List<Color> colors;
   final Duration stepDuration;
   final bool autoPlay;
-  
+
   const OrbSequenceDemo({
     super.key,
     this.colors = const [Colors.blue, Colors.green, Colors.red],
     this.stepDuration = const Duration(milliseconds: 600),
     this.autoPlay = true,
   });
-  
+
   @override
   State<OrbSequenceDemo> createState() => _OrbSequenceDemoState();
 }
 
-class _OrbSequenceDemoState extends State<OrbSequenceDemo>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _OrbSequenceDemoState extends State<OrbSequenceDemo> {
   int _activeOrb = -1;
-  int _sequenceIndex = 0;
   final List<int> _sequence = [0, 2, 1, 0]; // Demo sequence
-  
+
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.stepDuration,
-      vsync: this,
-    );
-    
     if (widget.autoPlay) {
       _playSequence();
     }
   }
-  
+
   void _playSequence() async {
     await Future.delayed(500.ms);
     for (int i = 0; i < _sequence.length; i++) {
@@ -59,13 +52,7 @@ class _OrbSequenceDemoState extends State<OrbSequenceDemo>
       _playSequence();
     }
   }
-  
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-  
+
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
@@ -78,11 +65,15 @@ class _OrbSequenceDemoState extends State<OrbSequenceDemo>
       ),
     );
   }
-  
+
   Widget _buildOrb(int index) {
-    final color = [AppColors.orbBlue, AppColors.orbGreen, AppColors.orbRed][index];
+    final color = [
+      AppColors.orbBlue,
+      AppColors.orbGreen,
+      AppColors.orbRed,
+    ][index];
     final isActive = index == _activeOrb;
-    
+
     return AnimatedContainer(
       duration: 200.ms,
       margin: const EdgeInsets.symmetric(horizontal: 12),
@@ -90,15 +81,12 @@ class _OrbSequenceDemoState extends State<OrbSequenceDemo>
       height: 60,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withOpacity(isActive ? 0.9 : 0.3),
-        border: Border.all(
-          color: color,
-          width: isActive ? 3 : 2,
-        ),
+        color: color.withValues(alpha: isActive ? 0.9 : 0.3),
+        border: Border.all(color: color, width: isActive ? 3 : 2),
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: color.withOpacity(0.6),
+                  color: color.withValues(alpha: 0.6),
                   blurRadius: 25,
                   spreadRadius: 5,
                 ),
@@ -114,14 +102,14 @@ class GridPatternDemo extends StatefulWidget {
   final int gridSize;
   final Color activeColor;
   final bool showRecall;
-  
+
   const GridPatternDemo({
     super.key,
     this.gridSize = 3,
     this.activeColor = AppColors.orbPurple,
     this.showRecall = false,
   });
-  
+
   @override
   State<GridPatternDemo> createState() => _GridPatternDemoState();
 }
@@ -129,28 +117,26 @@ class GridPatternDemo extends StatefulWidget {
 class _GridPatternDemoState extends State<GridPatternDemo> {
   Set<int> _activePattern = {};
   Set<int> _userTaps = {};
-  bool _isRecallPhase = false;
-  
+
   @override
   void initState() {
     super.initState();
     _startDemo();
   }
-  
+
   void _startDemo() async {
     // Watch phase
     _activePattern = {0, 2, 4, 6}; // Demo pattern
-    setState(() => _isRecallPhase = false);
-    
+    setState(() {});
+
     await Future.delayed(2000.ms);
     if (!mounted) return;
-    
+
     // Hide pattern
     setState(() {
       _activePattern = {};
-      _isRecallPhase = true;
     });
-    
+
     // Simulate recall taps
     await Future.delayed(500.ms);
     for (int tile in [0, 2, 4, 6]) {
@@ -158,11 +144,11 @@ class _GridPatternDemoState extends State<GridPatternDemo> {
       setState(() => _userTaps.add(tile));
       await Future.delayed(400.ms);
     }
-    
+
     // Success flash
     await Future.delayed(800.ms);
     if (!mounted) return;
-    
+
     // Restart loop
     setState(() {
       _userTaps = {};
@@ -171,7 +157,7 @@ class _GridPatternDemoState extends State<GridPatternDemo> {
     await Future.delayed(500.ms);
     if (mounted) _startDemo();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
@@ -190,24 +176,24 @@ class _GridPatternDemoState extends State<GridPatternDemo> {
             final isPatternActive = _activePattern.contains(index);
             final isUserTapped = _userTaps.contains(index);
             final isActive = isPatternActive || isUserTapped;
-            
+
             return AnimatedContainer(
               duration: 200.ms,
               decoration: BoxDecoration(
                 color: isActive
-                    ? widget.activeColor.withOpacity(0.7)
-                    : Colors.white.withOpacity(0.1),
+                    ? widget.activeColor.withValues(alpha: 0.7)
+                    : Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isActive
                       ? widget.activeColor
-                      : Colors.white.withOpacity(0.2),
+                      : Colors.white.withValues(alpha: 0.2),
                   width: 2,
                 ),
                 boxShadow: isActive
                     ? [
                         BoxShadow(
-                          color: widget.activeColor.withOpacity(0.5),
+                          color: widget.activeColor.withValues(alpha: 0.5),
                           blurRadius: 15,
                         ),
                       ]
@@ -224,12 +210,9 @@ class _GridPatternDemoState extends State<GridPatternDemo> {
 /// Card comparison demo for Reflex Match tutorial
 class CardComparisonDemo extends StatefulWidget {
   final bool showSameCards;
-  
-  const CardComparisonDemo({
-    super.key,
-    this.showSameCards = true,
-  });
-  
+
+  const CardComparisonDemo({super.key, this.showSameCards = true});
+
   @override
   State<CardComparisonDemo> createState() => _CardComparisonDemoState();
 }
@@ -241,41 +224,41 @@ class _CardComparisonDemoState extends State<CardComparisonDemo> {
   Color _card2Color = AppColors.orbBlue;
   IconData _card2Icon = LucideIcons.star;
   bool _showSame = true;
-  
+
   @override
   void initState() {
     super.initState();
     _startDemo();
   }
-  
+
   void _startDemo() async {
     _showSame = !_showSame; // Alternate between same/different
-    
+
     // Set cards
     _card1Color = AppColors.orbBlue;
     _card1Icon = LucideIcons.star;
     _card2Color = _showSame ? AppColors.orbBlue : AppColors.orbGreen;
     _card2Icon = _showSame ? LucideIcons.star : LucideIcons.circle;
-    
+
     // Phase 1: Show first card
     setState(() => _phase = 0);
     await Future.delayed(1000.ms);
     if (!mounted) return;
-    
+
     // Phase 2: Show second card
     setState(() => _phase = 1);
     await Future.delayed(1000.ms);
     if (!mounted) return;
-    
+
     // Phase 3: Compare
     setState(() => _phase = 2);
     await Future.delayed(1500.ms);
     if (!mounted) return;
-    
+
     // Loop
     if (mounted) _startDemo();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
@@ -288,15 +271,19 @@ class _CardComparisonDemoState extends State<CardComparisonDemo> {
             AnimatedOpacity(
               duration: 300.ms,
               opacity: _phase >= 0 ? 1.0 : 0.0,
-              child: _buildCard(_card1Color, _card1Icon, _phase >= 1 ? 0.5 : 1.0),
+              child: _buildCard(
+                _card1Color,
+                _card1Icon,
+                _phase >= 1 ? 0.5 : 1.0,
+              ),
             ),
-            
+
             // Arrow/comparison
             if (_phase >= 1)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Icon(
-                  _phase == 2 
+                  _phase == 2
                       ? (_showSame ? LucideIcons.equal : LucideIcons.x)
                       : LucideIcons.arrowRight,
                   size: 28,
@@ -305,7 +292,7 @@ class _CardComparisonDemoState extends State<CardComparisonDemo> {
                       : Colors.white54,
                 ),
               ).animate().fadeIn(duration: 200.ms),
-            
+
             // Card 2
             if (_phase >= 1)
               AnimatedOpacity(
@@ -318,7 +305,7 @@ class _CardComparisonDemoState extends State<CardComparisonDemo> {
       ),
     );
   }
-  
+
   Widget _buildCard(Color color, IconData icon, double opacity) {
     return Opacity(
       opacity: opacity,
@@ -326,14 +313,11 @@ class _CardComparisonDemoState extends State<CardComparisonDemo> {
         width: 80,
         height: 100,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: color, width: 2),
           boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.4),
-              blurRadius: 15,
-            ),
+            BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 15),
           ],
         ),
         child: Icon(icon, color: color, size: 36),
@@ -345,7 +329,7 @@ class _CardComparisonDemoState extends State<CardComparisonDemo> {
 /// Flowing items demo for Echo Stream tutorial
 class FlowingItemsDemo extends StatefulWidget {
   const FlowingItemsDemo({super.key});
-  
+
   @override
   State<FlowingItemsDemo> createState() => _FlowingItemsDemoState();
 }
@@ -357,16 +341,16 @@ class _FlowingItemsDemoState extends State<FlowingItemsDemo> {
     _FlowItem(color: AppColors.orbGreen, icon: LucideIcons.triangle),
     _FlowItem(color: AppColors.orbYellow, icon: LucideIcons.star),
   ];
-  
+
   int _hiddenIndex = -1;
   int _phase = 0; // 0: flowing, 1: hidden, 2: choices
-  
+
   @override
   void initState() {
     super.initState();
     _startDemo();
   }
-  
+
   void _startDemo() async {
     // Phase 0: Show all items flowing in
     setState(() {
@@ -375,7 +359,7 @@ class _FlowingItemsDemoState extends State<FlowingItemsDemo> {
     });
     await Future.delayed(2000.ms);
     if (!mounted) return;
-    
+
     // Phase 1: Hide one
     setState(() {
       _phase = 1;
@@ -383,16 +367,16 @@ class _FlowingItemsDemoState extends State<FlowingItemsDemo> {
     });
     await Future.delayed(1500.ms);
     if (!mounted) return;
-    
+
     // Phase 2: Show choices (correct one highlights)
     setState(() => _phase = 2);
     await Future.delayed(2000.ms);
     if (!mounted) return;
-    
+
     // Loop
     if (mounted) _startDemo();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return RepaintBoundary(
@@ -407,37 +391,42 @@ class _FlowingItemsDemoState extends State<FlowingItemsDemo> {
               children: List.generate(_items.length, (index) {
                 final item = _items[index];
                 final isHidden = _phase >= 1 && index == _hiddenIndex;
-                
+
                 return AnimatedContainer(
-                  duration: 300.ms,
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: isHidden 
-                        ? Colors.white.withOpacity(0.1) 
-                        : item.color.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isHidden 
-                          ? Colors.white.withOpacity(0.3) 
-                          : item.color,
-                      width: 2,
-                    ),
-                  ),
-                  child: isHidden
-                      ? const Icon(LucideIcons.helpCircle, color: Colors.white38, size: 24)
-                      : Icon(item.icon, color: item.color, size: 24),
-                ).animate(delay: (index * 100).ms)
+                      duration: 300.ms,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: isHidden
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : item.color.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isHidden
+                              ? Colors.white.withValues(alpha: 0.3)
+                              : item.color,
+                          width: 2,
+                        ),
+                      ),
+                      child: isHidden
+                          ? const Icon(
+                              LucideIcons.helpCircle,
+                              color: Colors.white38,
+                              size: 24,
+                            )
+                          : Icon(item.icon, color: item.color, size: 24),
+                    )
+                    .animate(delay: (index * 100).ms)
                     .fadeIn()
                     .slideY(begin: 0.3, end: 0);
               }),
             ),
-            
+
             // Choices
             if (_phase == 2) ...[
               const SizedBox(height: 24),
-              Text(
+              const Text(
                 'Which one was hidden?',
                 style: TextStyle(color: Colors.white70, fontSize: 14),
               ),
@@ -456,16 +445,16 @@ class _FlowingItemsDemoState extends State<FlowingItemsDemo> {
       ),
     );
   }
-  
+
   Widget _buildChoice(_FlowItem item, bool isCorrect) {
     return AnimatedContainer(
       duration: 300.ms,
       margin: const EdgeInsets.symmetric(horizontal: 6),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: isCorrect 
-            ? AppColors.orbGreen.withOpacity(0.2)
-            : Colors.white.withOpacity(0.05),
+        color: isCorrect
+            ? AppColors.orbGreen.withValues(alpha: 0.2)
+            : Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: isCorrect ? AppColors.orbGreen : Colors.white24,
@@ -480,7 +469,7 @@ class _FlowingItemsDemoState extends State<FlowingItemsDemo> {
 class _FlowItem {
   final Color color;
   final IconData icon;
-  
+
   _FlowItem({required this.color, required this.icon});
 }
 
@@ -488,13 +477,13 @@ class _FlowItem {
 class TapIndicator extends StatelessWidget {
   final Offset position;
   final Color color;
-  
+
   const TapIndicator({
     super.key,
     required this.position,
     this.color = Colors.white,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Positioned(
@@ -504,14 +493,15 @@ class TapIndicator extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color.withOpacity(0.3),
-              border: Border.all(color: color.withOpacity(0.5)),
-            ),
-          ).animate(onPlay: (c) => c.repeat(reverse: true))
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color.withValues(alpha: 0.3),
+                  border: Border.all(color: color.withValues(alpha: 0.5)),
+                ),
+              )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
               .scale(begin: const Offset(1, 1), end: const Offset(1.3, 1.3)),
           const SizedBox(height: 4),
           Icon(LucideIcons.mousePointer2, color: color, size: 20),

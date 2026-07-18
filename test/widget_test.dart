@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:echo_memory/app.dart';
 
@@ -8,8 +7,7 @@ void main() {
       // Build the app
       await tester.pumpWidget(const EchoMemoryApp());
 
-      // Allow time for initial animations
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       // Verify the app title is displayed somewhere
       expect(find.textContaining('Echo'), findsWidgets);
@@ -25,7 +23,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify key game modes are visible
-      expect(find.text('Classic Echo'), findsOneWidget);
+      expect(find.text('Start Classic Echo'), findsOneWidget);
       expect(find.text('Lumina Matrix'), findsOneWidget);
     });
   });

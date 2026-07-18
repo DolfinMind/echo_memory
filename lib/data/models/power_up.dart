@@ -1,17 +1,13 @@
 /// Power-up model for Echo Memory
 /// Defines power-ups with their effects and costs
+library;
+
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../config/theme/app_colors.dart';
 
-enum PowerUpType {
-  slowMotion,
-  hint,
-  shield,
-  timeFreeze,
-  doublePoints,
-}
+enum PowerUpType { slowMotion, hint, shield, timeFreeze, doublePoints }
 
 class PowerUp {
   final PowerUpType type;
@@ -49,50 +45,50 @@ class PowerUp {
 
   /// All available power-ups
   static List<PowerUp> get allPowerUps => [
-        const PowerUp(
-          type: PowerUpType.slowMotion,
-          name: 'Slow Motion',
-          description: 'Slows pattern display by 50%',
-          icon: LucideIcons.gauge,
-          color: AppColors.powerUpSlowMo,
-          cost: 100,
-          durationSeconds: 10,
-        ),
-        const PowerUp(
-          type: PowerUpType.hint,
-          name: 'Hint',
-          description: 'Highlights next 2 colors',
-          icon: LucideIcons.lightbulb,
-          color: AppColors.powerUpHint,
-          cost: 150,
-        ),
-        const PowerUp(
-          type: PowerUpType.shield,
-          name: 'Shield',
-          description: 'Prevents one mistake',
-          icon: LucideIcons.shield,
-          color: AppColors.powerUpShield,
-          cost: 200,
-        ),
-        const PowerUp(
-          type: PowerUpType.timeFreeze,
-          name: 'Time Freeze',
-          description: 'Pauses timer for 5 seconds',
-          icon: LucideIcons.snowflake,
-          color: AppColors.powerUpFreeze,
-          cost: 250,
-          durationSeconds: 5,
-        ),
-        const PowerUp(
-          type: PowerUpType.doublePoints,
-          name: 'Double Points',
-          description: '2x points for next sequence',
-          icon: LucideIcons.star,
-          color: AppColors.powerUpDouble,
-          cost: 300,
-          durationSeconds: 15,
-        ),
-      ];
+    const PowerUp(
+      type: PowerUpType.slowMotion,
+      name: 'Slow Motion',
+      description: 'Slows pattern display by 50%',
+      icon: LucideIcons.gauge,
+      color: AppColors.powerUpSlowMo,
+      cost: 100,
+      durationSeconds: 10,
+    ),
+    const PowerUp(
+      type: PowerUpType.hint,
+      name: 'Hint',
+      description: 'Highlights next 2 colors',
+      icon: LucideIcons.lightbulb,
+      color: AppColors.powerUpHint,
+      cost: 150,
+    ),
+    const PowerUp(
+      type: PowerUpType.shield,
+      name: 'Shield',
+      description: 'Prevents one mistake',
+      icon: LucideIcons.shield,
+      color: AppColors.powerUpShield,
+      cost: 200,
+    ),
+    const PowerUp(
+      type: PowerUpType.timeFreeze,
+      name: 'Time Freeze',
+      description: 'Pauses timer for 5 seconds',
+      icon: LucideIcons.snowflake,
+      color: AppColors.powerUpFreeze,
+      cost: 250,
+      durationSeconds: 5,
+    ),
+    const PowerUp(
+      type: PowerUpType.doublePoints,
+      name: 'Double Points',
+      description: '2x points for next sequence',
+      icon: LucideIcons.star,
+      color: AppColors.powerUpDouble,
+      cost: 300,
+      durationSeconds: 15,
+    ),
+  ];
 
   /// Get power-up by type
   static PowerUp getByType(PowerUpType type) {
@@ -101,10 +97,7 @@ class PowerUp {
 
   /// Convert to JSON
   Map<String, dynamic> toJson() {
-    return {
-      'type': type.index,
-      'quantity': quantity,
-    };
+    return {'type': type.index, 'quantity': quantity};
   }
 
   /// Create from JSON
@@ -150,7 +143,9 @@ class PowerUpInventory {
 
   /// Convert to JSON
   Map<String, dynamic> toJson() {
-    return quantities.map((key, value) => MapEntry(key.index.toString(), value));
+    return quantities.map(
+      (key, value) => MapEntry(key.index.toString(), value),
+    );
   }
 
   /// Create from JSON

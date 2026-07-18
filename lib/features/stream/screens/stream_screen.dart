@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_text_styles.dart';
 import '../../../shared/widgets/animated_gradient.dart';
@@ -9,7 +9,6 @@ import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/tutorial_overlay.dart';
 import '../../../shared/widgets/animated_demo.dart';
 import '../../../core/services/tutorial_service.dart';
-import '../../game/widgets/score_display.dart';
 import '../controllers/stream_controller.dart' as game;
 import '../widgets/stream_item_widget.dart';
 
@@ -33,7 +32,7 @@ class _StreamScreenState extends State<StreamScreen> {
     _controller = game.StreamController();
     _checkTutorial();
   }
-  
+
   Future<void> _checkTutorial() async {
     final tutorialService = await TutorialService.getInstance();
     if (!tutorialService.hasSeenTutorial(GameModes.echoStream)) {
@@ -42,7 +41,7 @@ class _StreamScreenState extends State<StreamScreen> {
       }
     }
   }
-  
+
   void _completeTutorial() async {
     final tutorialService = await TutorialService.getInstance();
     await tutorialService.markTutorialComplete(GameModes.echoStream);
@@ -50,7 +49,7 @@ class _StreamScreenState extends State<StreamScreen> {
       setState(() => _showTutorial = false);
     }
   }
-  
+
   void _skipTutorial() async {
     final tutorialService = await TutorialService.getInstance();
     await tutorialService.markTutorialComplete(GameModes.echoStream);
@@ -58,28 +57,31 @@ class _StreamScreenState extends State<StreamScreen> {
       setState(() => _showTutorial = false);
     }
   }
-  
+
   List<TutorialStep> get _tutorialSteps => [
-    TutorialStep(
+    const TutorialStep(
       title: 'Watch Items Flow',
-      description: 'A stream of colored shapes will flow past. Pay close attention!',
+      description:
+          'A stream of colored shapes will flow past. Pay close attention!',
       icon: LucideIcons.eye,
-      demo: const FlowingItemsDemo(),
+      demo: FlowingItemsDemo(),
     ),
     TutorialStep(
       title: 'One Goes Missing',
-      description: 'After the stream ends, one item will be hidden. Can you remember it?',
+      description:
+          'After the stream ends, one item will be hidden. Can you remember it?',
       icon: LucideIcons.helpCircle,
       demo: _buildMissingItemDemo(),
     ),
     TutorialStep(
       title: 'Pick the Right One',
-      description: 'Choose the correct item from the options. Pick your difficulty mode to start!',
+      description:
+          'Choose the correct item from the options. Pick your difficulty mode to start!',
       icon: LucideIcons.checkCircle,
       demo: _buildChoicesDemo(),
     ),
   ];
-  
+
   Widget _buildMissingItemDemo() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -91,14 +93,20 @@ class _StreamScreenState extends State<StreamScreen> {
       ],
     );
   }
-  
-  Widget _buildSmallItem(Color? color, IconData? icon, {bool isHidden = false}) {
+
+  Widget _buildSmallItem(
+    Color? color,
+    IconData? icon, {
+    bool isHidden = false,
+  }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 6),
       width: 45,
       height: 45,
       decoration: BoxDecoration(
-        color: isHidden ? Colors.white.withOpacity(0.1) : color?.withOpacity(0.3),
+        color: isHidden
+            ? Colors.white.withValues(alpha: 0.1)
+            : color?.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isHidden ? Colors.white24 : (color ?? Colors.white24),
@@ -110,7 +118,7 @@ class _StreamScreenState extends State<StreamScreen> {
           : Icon(icon, color: color, size: 20),
     );
   }
-  
+
   Widget _buildChoicesDemo() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -118,29 +126,48 @@ class _StreamScreenState extends State<StreamScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildChoiceItem(AppColors.orbBlue, LucideIcons.square, isCorrect: true),
-            _buildChoiceItem(AppColors.orbRed, LucideIcons.circle, isCorrect: false),
-            _buildChoiceItem(AppColors.orbPurple, LucideIcons.triangle, isCorrect: false),
+            _buildChoiceItem(
+              AppColors.orbBlue,
+              LucideIcons.square,
+              isCorrect: true,
+            ),
+            _buildChoiceItem(
+              AppColors.orbRed,
+              LucideIcons.circle,
+              isCorrect: false,
+            ),
+            _buildChoiceItem(
+              AppColors.orbPurple,
+              LucideIcons.triangle,
+              isCorrect: false,
+            ),
           ],
         ),
       ],
     );
   }
-  
-  Widget _buildChoiceItem(Color color, IconData icon, {required bool isCorrect}) {
+
+  Widget _buildChoiceItem(
+    Color color,
+    IconData icon, {
+    required bool isCorrect,
+  }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isCorrect ? AppColors.orbGreen.withOpacity(0.2) : color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCorrect ? AppColors.orbGreen : Colors.white24,
-          width: isCorrect ? 2 : 1,
-        ),
-      ),
-      child: Icon(icon, color: color, size: 28),
-    ).animate(delay: isCorrect ? 500.ms : Duration.zero)
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isCorrect
+                ? AppColors.orbGreen.withValues(alpha: 0.2)
+                : color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isCorrect ? AppColors.orbGreen : Colors.white24,
+              width: isCorrect ? 2 : 1,
+            ),
+          ),
+          child: Icon(icon, color: color, size: 28),
+        )
+        .animate(delay: isCorrect ? 500.ms : Duration.zero)
         .then(delay: 300.ms)
         .shake(hz: 2, offset: const Offset(2, 0), duration: 400.ms);
   }
@@ -148,22 +175,23 @@ class _StreamScreenState extends State<StreamScreen> {
   void _startFlow() {
     _visibleItems = 0;
     _showingFlow = true;
-    
+
     _flowTimer?.cancel();
     _flowTimer = Timer.periodic(_controller.flowSpeed, (timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
-      
+
       setState(() {
         _visibleItems++;
       });
-      
+
       if (_visibleItems >= _controller.streamItems.length) {
         timer.cancel();
         // Wait a moment then hide
-        Future.delayed(const Duration(milliseconds: 1000), () { // Slightly longer view time
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          // Slightly longer view time
           if (!mounted) return;
           setState(() => _showingFlow = false);
           Future.delayed(const Duration(milliseconds: 500), () {
@@ -229,25 +257,43 @@ class _StreamScreenState extends State<StreamScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(LucideIcons.arrowLeft, color: Colors.white70, size: 24),
+            icon: const Icon(
+              LucideIcons.arrowLeft,
+              color: Colors.white70,
+              size: 24,
+            ),
           ),
           if (_controller.state != game.StreamState.ready)
             Row(
               children: [
-                Text('LV ${_controller.level}', style: AppTextStyles.labelMedium.copyWith(color: AppColors.orbBlue)),
+                Text(
+                  'LV ${_controller.level}',
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: AppColors.orbBlue,
+                  ),
+                ),
                 const SizedBox(width: 12),
-                const Icon(LucideIcons.gem, color: AppColors.orbGreen, size: 16),
+                const Icon(
+                  LucideIcons.gem,
+                  color: AppColors.orbGreen,
+                  size: 16,
+                ),
                 const SizedBox(width: 4),
                 Text('${_controller.score}', style: AppTextStyles.titleMedium),
               ],
             ),
           if (_controller.state != game.StreamState.ready)
             Row(
-              children: List.generate(3, (i) => Icon(
-                LucideIcons.heart,
-                color: i < _controller.lives ? AppColors.orbRed : AppColors.textMuted.withOpacity(0.3),
-                size: 18,
-              )),
+              children: List.generate(
+                3,
+                (i) => Icon(
+                  LucideIcons.heart,
+                  color: i < _controller.lives
+                      ? AppColors.orbRed
+                      : AppColors.textMuted.withValues(alpha: 0.3),
+                  size: 18,
+                ),
+              ),
             )
           else
             const SizedBox(width: 48), // Spacer
@@ -288,9 +334,12 @@ class _StreamScreenState extends State<StreamScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 48),
-          Text('SELECT MODE', style: AppTextStyles.labelMedium.copyWith(color: Colors.white54)),
+          Text(
+            'SELECT MODE',
+            style: AppTextStyles.labelMedium.copyWith(color: Colors.white54),
+          ),
           const SizedBox(height: 16),
-          
+
           _buildDifficultyButton(
             mode: 'COLOR',
             icon: LucideIcons.palette,
@@ -327,7 +376,7 @@ class _StreamScreenState extends State<StreamScreen> {
       ),
     ).animate().fadeIn();
   }
-  
+
   Widget _buildDifficultyButton({
     required String mode,
     required IconData icon,
@@ -340,14 +389,14 @@ class _StreamScreenState extends State<StreamScreen> {
       child: GlassContainer(
         padding: const EdgeInsets.all(20),
         borderWidth: 1, // Fixed typo
-        borderColor: color.withOpacity(0.5),
-        backgroundColor: color.withOpacity(0.1),
+        borderColor: color.withValues(alpha: 0.5),
+        backgroundColor: color.withValues(alpha: 0.1),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24),
@@ -357,9 +406,19 @@ class _StreamScreenState extends State<StreamScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(mode, style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    mode,
+                    style: AppTextStyles.titleMedium.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(desc, style: AppTextStyles.bodyMedium.copyWith(color: Colors.white70)),
+                  Text(
+                    desc,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white70,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -410,7 +469,7 @@ class _StreamScreenState extends State<StreamScreen> {
             gradient: LinearGradient(
               colors: [
                 Colors.transparent,
-                AppColors.orbPurple.withOpacity(0.5),
+                AppColors.orbPurple.withValues(alpha: 0.5),
                 Colors.transparent,
               ],
             ),
@@ -448,8 +507,8 @@ class _StreamScreenState extends State<StreamScreen> {
   }
 
   void _handleChoice(game.StreamItem item) {
-    bool correct = _controller.selectAnswer(item);
-    
+    _controller.selectAnswer(item);
+
     if (_controller.state == game.StreamState.levelComplete) {
       Future.delayed(const Duration(seconds: 2), () {
         if (!mounted) return;
@@ -470,9 +529,18 @@ class _StreamScreenState extends State<StreamScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(LucideIcons.checkCircle, size: 60, color: AppColors.orbGreen),
+          const Icon(
+            LucideIcons.checkCircle,
+            size: 60,
+            color: AppColors.orbGreen,
+          ),
           const SizedBox(height: 12),
-          Text('CORRECT!', style: AppTextStyles.headlineLarge.copyWith(color: AppColors.orbGreen)),
+          Text(
+            'CORRECT!',
+            style: AppTextStyles.headlineLarge.copyWith(
+              color: AppColors.orbGreen,
+            ),
+          ),
           const SizedBox(height: 24),
           Text('The sequence was:', style: AppTextStyles.bodyLarge),
           const SizedBox(height: 12),
@@ -491,14 +559,25 @@ class _StreamScreenState extends State<StreamScreen> {
         children: [
           const Icon(LucideIcons.xCircle, size: 60, color: AppColors.orbRed),
           const SizedBox(height: 12),
-          Text('WRONG!', style: AppTextStyles.headlineLarge.copyWith(color: AppColors.orbRed)),
+          Text(
+            'WRONG!',
+            style: AppTextStyles.headlineLarge.copyWith(
+              color: AppColors.orbRed,
+            ),
+          ),
           const SizedBox(height: 24),
-          Text('Item #${_controller.hiddenIndex + 1} was:', style: AppTextStyles.bodyLarge),
+          Text(
+            'Item #${_controller.hiddenIndex + 1} was:',
+            style: AppTextStyles.bodyLarge,
+          ),
           const SizedBox(height: 12),
           _buildStreamReview(isCorrect: false),
           const SizedBox(height: 16),
           if (_controller.lives > 0)
-            Text('${_controller.lives} lives remaining', style: AppTextStyles.bodyMedium),
+            Text(
+              '${_controller.lives} lives remaining',
+              style: AppTextStyles.bodyMedium,
+            ),
         ],
       ),
     ).animate().fadeIn();
@@ -513,19 +592,23 @@ class _StreamScreenState extends State<StreamScreen> {
         final item = _controller.streamItems[i];
         final isTarget = i == _controller.hiddenIndex;
         return Container(
-          decoration: isTarget ? BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isCorrect ? AppColors.orbGreen : AppColors.orbYellow,
-              width: 3,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: (isCorrect ? AppColors.orbGreen : AppColors.orbYellow).withOpacity(0.5),
-                blurRadius: 10,
-              ),
-            ],
-          ) : null,
+          decoration: isTarget
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isCorrect ? AppColors.orbGreen : AppColors.orbYellow,
+                    width: 3,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          (isCorrect ? AppColors.orbGreen : AppColors.orbYellow)
+                              .withValues(alpha: 0.5),
+                      blurRadius: 10,
+                    ),
+                  ],
+                )
+              : null,
           child: StreamItemWidget(item: item, size: 50),
         );
       }),
@@ -543,8 +626,14 @@ class _StreamScreenState extends State<StreamScreen> {
             const SizedBox(height: 16),
             Text('Stream Ended', style: AppTextStyles.headlineMedium),
             const SizedBox(height: 8),
-            Text('Final Score: ${_controller.score}', style: AppTextStyles.titleLarge),
-            Text('Reached Level: ${_controller.level}', style: AppTextStyles.bodyLarge),
+            Text(
+              'Final Score: ${_controller.score}',
+              style: AppTextStyles.titleLarge,
+            ),
+            Text(
+              'Reached Level: ${_controller.level}',
+              style: AppTextStyles.bodyLarge,
+            ),
             const SizedBox(height: 24),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -558,7 +647,9 @@ class _StreamScreenState extends State<StreamScreen> {
                   onPressed: () {
                     _controller.resetGame();
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.orbBlue),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.orbBlue,
+                  ),
                   child: const Text('Play Again'),
                 ),
               ],

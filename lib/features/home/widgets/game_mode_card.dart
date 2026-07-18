@@ -1,18 +1,15 @@
-/// Game mode card widget for Echo Memory
-/// Premium cards with gradient backgrounds and animations
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
+
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_text_styles.dart';
 
-class GameModeCard extends StatefulWidget {
+class GameModeCard extends StatelessWidget {
   final String title;
   final String description;
   final IconData icon;
   final LinearGradient gradient;
   final VoidCallback? onTap;
-  final int delay;
   final String? badge;
 
   const GameModeCard({
@@ -22,171 +19,98 @@ class GameModeCard extends StatefulWidget {
     required this.icon,
     required this.gradient,
     this.onTap,
-    this.delay = 0,
     this.badge,
   });
 
   @override
-  State<GameModeCard> createState() => _GameModeCardState();
-}
-
-class _GameModeCardState extends State<GameModeCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  bool _isPressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        widget.onTap?.call();
-      },
-      onTapCancel: () => setState(() => _isPressed = false),
-      child: AnimatedScale(
-        scale: _isPressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: widget.gradient,
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.gradient.colors.first.withOpacity(
-                      0.3 + _controller.value * 0.2,
-                    ),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+    final accent = gradient.colors.first;
+    return Semantics(
+      button: true,
+      label: '$title. $description',
+      child: Material(
+        color: AppColors.surface.withValues(alpha: 0.88),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: accent.withValues(alpha: 0.28)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: gradient,
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  // Content
-                  Row(
+                  child: Icon(icon, color: AppColors.textPrimary, size: 25),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Icon container
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          widget.icon,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      // Text content
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.title,
-                              style: AppTextStyles.titleLarge.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.titleMedium.copyWith(
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.description,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.white.withOpacity(0.8),
+                          ),
+                          if (badge != null) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: 0.16),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                badge!,
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: accent,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
-                      // Arrow
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          LucideIcons.arrowRight,
-                          color: Colors.white,
-                          size: 18,
-                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodySmall,
                       ),
                     ],
                   ),
-                  // Badge
-                  if (widget.badge != null)
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.accentGold,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.accentGold.withOpacity(0.5),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          widget.badge!,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
+                ),
+                const SizedBox(width: 8),
+                Icon(LucideIcons.chevronRight, color: accent, size: 20),
+              ],
+            ),
+          ),
         ),
       ),
-    )
-        .animate()
-        .fadeIn(delay: widget.delay.ms, duration: 400.ms)
-        .slideX(
-          begin: 0.1,
-          end: 0,
-          delay: widget.delay.ms,
-          duration: 400.ms,
-          curve: Curves.easeOutCubic,
-        );
+    );
   }
 }
 
-/// Compact mode card for landscape or smaller displays
 class CompactModeCard extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -203,29 +127,34 @@ class CompactModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 100,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
+    return Semantics(
+      button: true,
+      label: title,
+      child: Material(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.4)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: AppTextStyles.labelMedium.copyWith(color: color),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 96, minHeight: 96),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: color, size: 28),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    style: AppTextStyles.labelMedium.copyWith(color: color),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );

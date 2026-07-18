@@ -1,12 +1,15 @@
 /// Practice screen for Echo Memory
 /// Relaxed mode without time limits
+library;
+
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_text_styles.dart';
+import '../../../core/game/game_scoring.dart';
 import '../../../core/services/sound_service.dart';
 import '../../../core/services/haptic_service.dart';
 import '../../../core/utils/responsive_utils.dart';
@@ -14,8 +17,6 @@ import '../../../shared/widgets/animated_gradient.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/neon_button.dart';
 import '../../game/widgets/color_orb.dart';
-import '../../game/widgets/score_display.dart';
-import '../../home/screens/home_screen.dart';
 
 class PracticeGameScreen extends StatefulWidget {
   const PracticeGameScreen({super.key});
@@ -38,6 +39,8 @@ class _PracticeGameScreenState extends State<PracticeGameScreen> {
   bool _canReveal = true;
   int _highlightedOrbIndex = -1;
   Timer? _patternTimer;
+  Timer? _flashTimer;
+  Timer? _phaseTimer;
 
   @override
   void initState() {
@@ -48,6 +51,8 @@ class _PracticeGameScreenState extends State<PracticeGameScreen> {
   @override
   void dispose() {
     _patternTimer?.cancel();
+    _flashTimer?.cancel();
+    _phaseTimer?.cancel();
     super.dispose();
   }
 
@@ -63,31 +68,31 @@ class _PracticeGameScreenState extends State<PracticeGameScreen> {
 
   void _displayPattern() {
     _patternTimer?.cancel();
+    _flashTimer?.cancel();
+    _phaseTimer?.cancel();
     int displayIndex = 0;
 
-    _patternTimer = Timer.periodic(
-      const Duration(milliseconds: 800),
-      (timer) {
-        if (displayIndex < _sequence.length) {
-          setState(() => _highlightedOrbIndex = _sequence[displayIndex]);
-          _soundService.playColorSound(_sequence[displayIndex]);
+    _patternTimer = Timer.periodic(const Duration(milliseconds: 800), (timer) {
+      if (displayIndex < _sequence.length) {
+        setState(() => _highlightedOrbIndex = _sequence[displayIndex]);
+        _soundService.playColorSound(_sequence[displayIndex]);
 
-          Future.delayed(const Duration(milliseconds: 400), () {
-            if (mounted) setState(() => _highlightedOrbIndex = -1);
-          });
-          displayIndex++;
-        } else {
-          timer.cancel();
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) setState(() => _showPattern = false);
-          });
-        }
-      },
-    );
+        _flashTimer?.cancel();
+        _flashTimer = Timer(const Duration(milliseconds: 400), () {
+          if (mounted) setState(() => _highlightedOrbIndex = -1);
+        });
+        displayIndex++;
+      } else {
+        timer.cancel();
+        _phaseTimer = Timer(const Duration(milliseconds: 500), () {
+          if (mounted) setState(() => _showPattern = false);
+        });
+      }
+    });
   }
 
   void _onOrbTap(int colorIndex) {
-    if (_showPattern) return;
+    if (_showPattern || _currentIndex >= _sequence.length) return;
 
     _soundService.playColorSound(colorIndex);
     _hapticService.lightImpact();
@@ -96,8 +101,8 @@ class _PracticeGameScreenState extends State<PracticeGameScreen> {
       // Correct
       _soundService.playCorrect();
       setState(() {
+        _score += GameScoring.correctColor(streak: _currentIndex + 1);
         _currentIndex++;
-        _score += 10;
       });
 
       if (_currentIndex >= _sequence.length) {
@@ -118,7 +123,15 @@ class _PracticeGameScreenState extends State<PracticeGameScreen> {
     _soundService.playVictory();
     _hapticService.success();
 
-    Future.delayed(const Duration(seconds: 1), () {
+    setState(() {
+      _showPattern = true;
+      _score += GameScoring.roundBonus(
+        sequenceLength: _sequence.length,
+        difficultyMultiplier: 1,
+      );
+    });
+    _phaseTimer?.cancel();
+    _phaseTimer = Timer(const Duration(seconds: 1), () {
       if (mounted) {
         setState(() {
           _sequence.add(_random.nextInt(5));
@@ -181,7 +194,7 @@ class _PracticeGameScreenState extends State<PracticeGameScreen> {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.surface.withOpacity(0.5),
+                  color: AppColors.surface.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -195,7 +208,7 @@ class _PracticeGameScreenState extends State<PracticeGameScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
+                const Icon(
                   LucideIcons.graduationCap,
                   color: AppColors.orbGreen,
                   size: 16,
@@ -215,11 +228,7 @@ class _PracticeGameScreenState extends State<PracticeGameScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              LucideIcons.star,
-              color: AppColors.accentGold,
-              size: 16,
-            ),
+            const Icon(LucideIcons.star, color: AppColors.accentGold, size: 16),
             const SizedBox(width: 6),
             Text(
               '$_score',
@@ -255,10 +264,7 @@ class _PracticeGameScreenState extends State<PracticeGameScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(label, style: AppTextStyles.labelSmall),
-        Text(
-          value,
-          style: AppTextStyles.titleMedium.copyWith(color: color),
-        ),
+        Text(value, style: AppTextStyles.titleMedium.copyWith(color: color)),
       ],
     );
   }

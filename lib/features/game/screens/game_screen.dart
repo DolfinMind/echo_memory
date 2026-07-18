@@ -1,29 +1,22 @@
-/// Main game screen for Echo Memory
-/// Core gameplay with all visual enhancements
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
+
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_text_styles.dart';
-import '../../../config/constants/game_constants.dart';
-import '../../../core/services/sound_service.dart';
+import '../../../core/game/game_scoring.dart';
 import '../../../core/services/haptic_service.dart';
+import '../../../core/services/sound_service.dart';
+import '../../../core/services/storage_service.dart';
 import '../../../core/services/tutorial_service.dart';
-import '../../../core/utils/responsive_utils.dart';
+import '../../../data/models/player_stats.dart';
 import '../../../shared/widgets/animated_gradient.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/neon_button.dart';
-import '../../../shared/widgets/tutorial_overlay.dart';
-import '../../../shared/widgets/animated_demo.dart';
-import '../../../data/models/power_up.dart';
 import '../widgets/color_orb.dart';
-import '../widgets/combo_indicator.dart';
 import '../widgets/score_display.dart';
-import '../widgets/power_up_bar.dart';
-import '../animations/celebration_overlay.dart';
-import '../../home/screens/home_screen.dart';
 
 class GameScreen extends StatefulWidget {
   final String difficulty;
@@ -39,13 +32,14 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
-  // Services
+class _GameScreenState extends State<GameScreen> {
   final SoundService _soundService = SoundService();
   final HapticService _hapticService = HapticService();
+  final StorageService _storageService = StorageService();
+  final Random _random = Random();
 
-  // Game state
   List<int> _sequence = [];
+  List<int> _orbMapping = [0, 1, 2, 3, 4];
   int _currentIndex = 0;
   int _score = 0;
   int _lives = 3;
@@ -53,550 +47,367 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   int _currentStreak = 0;
   int _bestStreak = 0;
   int _timeRemaining = 0;
-  bool _showPattern = true;
-  bool _isGameOver = false;
-  bool _showCelebration = false;
-  CelebrationType? _celebrationType;
   int _highlightedOrbIndex = -1;
+  int _correctAnswers = 0;
+  int _mistakes = 0;
+  int? _lastAward;
+  String? _feedback;
+  bool _showPattern = true;
+  bool _isTransitioning = false;
+  bool _isGameOver = false;
+  bool _roundIsPerfect = true;
+  bool _showTutorial = false;
+  bool _resultSaved = false;
+  late DateTime _startedAt;
+
   Timer? _gameTimer;
   Timer? _patternTimer;
-  final Random _random = Random();
-  
-  // Quantum Mode State
-  List<int> _orbMapping = [0, 1, 2, 3, 4]; // Maps physical index to color index
+  Timer? _flashTimer;
+  Timer? _phaseTimer;
+
   bool get _isQuantumMode => widget.difficulty == 'quantum';
+  bool get _isZenMode => widget.difficulty == 'zen';
+  int get _initialSequence => widget.settings['initialSequence'] ?? 3;
+  int get _difficultyMultiplier => widget.settings['pointMultiplier'] ?? 1;
+  int get _timeLimit => widget.settings['timeLimit'] ?? 10;
 
-  // Power-ups
-  PowerUpInventory _powerUps = PowerUpInventory(quantities: {
-    PowerUpType.slowMotion: 2,
-    PowerUpType.hint: 1,
-    PowerUpType.shield: 1,
-  });
-  PowerUpType? _activePowerUp;
-  bool _hasShield = false;
+  Color get _accentColor {
+    if (_isQuantumMode) return AppColors.orbPurple;
+    if (_isZenMode) return AppColors.orbGreen;
+    return switch (widget.difficulty) {
+      'master' => AppColors.difficultyMaster,
+      'expert' => AppColors.difficultyExpert,
+      _ => AppColors.orbBlue,
+    };
+  }
 
-  // Animation controllers
-  late AnimationController _shakeController;
-  bool _shouldShake = false;
-  
-  // Tutorial state
-  bool _showTutorial = false;
+  String get _modeTitle {
+    if (_isQuantumMode) return 'Quantum Flux';
+    if (_isZenMode) return 'Zen Echo';
+    return '${widget.difficulty[0].toUpperCase()}${widget.difficulty.substring(1)} Echo';
+  }
 
   @override
   void initState() {
     super.initState();
     _lives = widget.settings['lives'] ?? 3;
-    _shakeController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
+    _startedAt = DateTime.now();
     _checkTutorial();
-  }
-  
-  Future<void> _checkTutorial() async {
-    // Determine which tutorial to check based on mode
-    String gameMode = GameModes.classicEcho;
-    if (widget.difficulty == 'quantum') {
-      gameMode = GameModes.quantumFlux;
-    } else if (widget.difficulty == 'zen') {
-      gameMode = GameModes.zen;
-    }
-    
-    final tutorialService = await TutorialService.getInstance();
-    if (!tutorialService.hasSeenTutorial(gameMode)) {
-      if (mounted) {
-        setState(() => _showTutorial = true);
-      }
-    } else {
-      _startGame();
-    }
-  }
-  
-  void _completeTutorial() async {
-    String gameMode = GameModes.classicEcho;
-    if (widget.difficulty == 'quantum') {
-      gameMode = GameModes.quantumFlux;
-    } else if (widget.difficulty == 'zen') {
-      gameMode = GameModes.zen;
-    }
-    
-    final tutorialService = await TutorialService.getInstance();
-    await tutorialService.markTutorialComplete(gameMode);
-    if (mounted) {
-      setState(() => _showTutorial = false);
-      _startGame();
-    }
-  }
-  
-  void _skipTutorial() async {
-    String gameMode = GameModes.classicEcho;
-    if (widget.difficulty == 'quantum') {
-      gameMode = GameModes.quantumFlux;
-    } else if (widget.difficulty == 'zen') {
-      gameMode = GameModes.zen;
-    }
-    
-    final tutorialService = await TutorialService.getInstance();
-    await tutorialService.markTutorialComplete(gameMode);
-    if (mounted) {
-      setState(() => _showTutorial = false);
-      _startGame();
-    }
-  }
-  
-  List<TutorialStep> get _tutorialSteps {
-    // Different tutorials for different modes
-    if (_isQuantumMode) {
-      return [
-        TutorialStep(
-          title: 'Watch the Sequence',
-          description: 'Colored orbs will light up one by one. Watch carefully!',
-          icon: LucideIcons.eye,
-          demo: const OrbSequenceDemo(),
-        ),
-        TutorialStep(
-          title: 'Orbs Shuffle!',
-          description: 'In Quantum mode, orbs change position after the pattern. Focus on COLORS, not positions!',
-          icon: LucideIcons.shuffle,
-          demo: _buildShuffleDemo(),
-        ),
-        TutorialStep(
-          title: 'Tap the Colors',
-          description: 'Tap the colors in the correct order. Remember: colors matter, not positions!',
-          icon: LucideIcons.mousePointer2,
-          demo: _buildTapDemo(),
-        ),
-      ];
-    }
-    
-    return [
-      TutorialStep(
-        title: 'Watch the Sequence',
-        description: 'Colored orbs will light up one by one. Memorize the order!',
-        icon: LucideIcons.eye,
-        demo: const OrbSequenceDemo(),
-      ),
-      TutorialStep(
-        title: 'Remember the Pattern',
-        description: 'Pay attention to the colors and their sequence. It gets longer each round!',
-        icon: LucideIcons.brain,
-        demo: _buildPatternDemo(),
-      ),
-      TutorialStep(
-        title: 'Tap in Order',
-        description: 'Tap the orbs in the same order they lit up. Build combos for bonus points!',
-        icon: LucideIcons.mousePointer2,
-        demo: _buildTapDemo(),
-      ),
-    ];
-  }
-  
-  Widget _buildShuffleDemo() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildSmallOrb(AppColors.orbBlue, 0),
-        const Icon(LucideIcons.arrowLeftRight, color: Colors.white54, size: 24),
-        _buildSmallOrb(AppColors.orbGreen, 1),
-        const Icon(LucideIcons.arrowLeftRight, color: Colors.white54, size: 24),
-        _buildSmallOrb(AppColors.orbRed, 2),
-      ],
-    ).animate(onPlay: (c) => c.repeat())
-        .shimmer(duration: 1500.ms, color: Colors.white24);
-  }
-  
-  Widget _buildPatternDemo() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildSmallOrb(AppColors.orbBlue, 0),
-        const SizedBox(width: 8),
-        const Icon(LucideIcons.arrowRight, color: Colors.white38, size: 16),
-        const SizedBox(width: 8),
-        _buildSmallOrb(AppColors.orbRed, 1),
-        const SizedBox(width: 8),
-        const Icon(LucideIcons.arrowRight, color: Colors.white38, size: 16),
-        const SizedBox(width: 8),
-        _buildSmallOrb(AppColors.orbGreen, 2),
-      ],
-    );
-  }
-  
-  Widget _buildTapDemo() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(3, (index) {
-        final colors = [AppColors.orbBlue, AppColors.orbRed, AppColors.orbGreen];
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: colors[index].withOpacity(0.3),
-            border: Border.all(color: colors[index], width: 2),
-          ),
-          child: index == 0 
-              ? const Icon(LucideIcons.mousePointer2, color: Colors.white70, size: 20)
-              : null,
-        ).animate(delay: (index * 300).ms)
-            .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1));
-      }),
-    );
-  }
-  
-  Widget _buildSmallOrb(Color color, int index) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withOpacity(0.4),
-        border: Border.all(color: color, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.3),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-    ).animate(delay: (index * 200).ms)
-        .fadeIn()
-        .scale(begin: const Offset(0.8, 0.8), end: const Offset(1, 1));
   }
 
   @override
   void dispose() {
-    _gameTimer?.cancel();
-    _patternTimer?.cancel();
-    _shakeController.dispose();
+    _cancelTimers();
     super.dispose();
   }
 
-  void _startGame() {
-    _generateSequence();
-  }
-
-  void _generateSequence() {
-    setState(() {
-      _sequence = List.generate(
-        widget.settings['initialSequence'] ?? 3,
-        (_) => _random.nextInt(5),
-      );
-      _currentIndex = 0;
-      _showPattern = true;
-      _level = _sequence.length - (widget.settings['initialSequence'] ?? 3) + 1;
-    });
-    _displayPattern();
-  }
-
-  void _displayPattern() {
+  void _cancelTimers() {
+    _gameTimer?.cancel();
     _patternTimer?.cancel();
-    int displayIndex = 0;
+    _flashTimer?.cancel();
+    _phaseTimer?.cancel();
+  }
 
-    _patternTimer = Timer.periodic(
-      Duration(milliseconds: _activePowerUp == PowerUpType.slowMotion ? 1200 : 800),
-      (timer) {
-        if (displayIndex < _sequence.length) {
-          setState(() => _highlightedOrbIndex = _sequence[displayIndex]);
-          _soundService.playColorSound(_sequence[displayIndex]);
-          _hapticService.lightImpact();
+  Future<void> _checkTutorial() async {
+    final mode = _isQuantumMode
+        ? GameModes.quantumFlux
+        : _isZenMode
+        ? GameModes.zen
+        : GameModes.classicEcho;
+    final tutorialService = await TutorialService.getInstance();
+    if (!mounted) return;
+    if (tutorialService.hasSeenTutorial(mode)) {
+      _startNewGame();
+    } else {
+      setState(() => _showTutorial = true);
+    }
+  }
 
-          Future.delayed(const Duration(milliseconds: 400), () {
-            if (mounted) {
-              setState(() => _highlightedOrbIndex = -1);
-            }
-          });
-          displayIndex++;
-        } else {
-          timer.cancel();
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) {
-              setState(() {
-                _showPattern = false;
-                if (_isQuantumMode) {
-                  _shuffleOrbs();
-                }
-                _startTimer();
-              });
-            }
-          });
-        }
-      },
-    );
+  Future<void> _completeTutorial() async {
+    final mode = _isQuantumMode
+        ? GameModes.quantumFlux
+        : _isZenMode
+        ? GameModes.zen
+        : GameModes.classicEcho;
+    final tutorialService = await TutorialService.getInstance();
+    await tutorialService.markTutorialComplete(mode);
+    if (!mounted) return;
+    setState(() => _showTutorial = false);
+    _startNewGame();
+  }
+
+  void _startNewGame() {
+    _cancelTimers();
+    _startedAt = DateTime.now();
+    setState(() {
+      _sequence = List.generate(_initialSequence, (_) => _random.nextInt(5));
+      _orbMapping = [0, 1, 2, 3, 4];
+      _currentIndex = 0;
+      _score = 0;
+      _lives = widget.settings['lives'] ?? 3;
+      _level = 1;
+      _currentStreak = 0;
+      _bestStreak = 0;
+      _timeRemaining = _timeLimit;
+      _correctAnswers = 0;
+      _mistakes = 0;
+      _lastAward = null;
+      _feedback = null;
+      _showPattern = true;
+      _isTransitioning = false;
+      _isGameOver = false;
+      _roundIsPerfect = true;
+      _resultSaved = false;
+    });
+    _presentPattern();
+  }
+
+  Duration get _patternInterval {
+    if (_isZenMode) return const Duration(milliseconds: 820);
+    return switch (widget.difficulty) {
+      'master' => const Duration(milliseconds: 520),
+      'expert' => const Duration(milliseconds: 640),
+      _ => const Duration(milliseconds: 740),
+    };
+  }
+
+  void _presentPattern() {
+    _gameTimer?.cancel();
+    _patternTimer?.cancel();
+    _flashTimer?.cancel();
+    _phaseTimer?.cancel();
+    var displayIndex = 0;
+
+    setState(() {
+      _showPattern = true;
+      _isTransitioning = false;
+      _currentIndex = 0;
+      _highlightedOrbIndex = -1;
+      _feedback = null;
+      _lastAward = null;
+    });
+
+    void showNext() {
+      if (!mounted) return;
+      if (displayIndex >= _sequence.length) {
+        _patternTimer?.cancel();
+        _phaseTimer = Timer(const Duration(milliseconds: 320), _beginRecall);
+        return;
+      }
+
+      final colorIndex = _sequence[displayIndex++];
+      setState(() => _highlightedOrbIndex = colorIndex);
+      _soundService.playColorSound(colorIndex);
+      _flashTimer?.cancel();
+      _flashTimer = Timer(
+        Duration(milliseconds: min(360, _patternInterval.inMilliseconds - 120)),
+        () {
+          if (mounted) setState(() => _highlightedOrbIndex = -1);
+        },
+      );
+    }
+
+    showNext();
+    _patternTimer = Timer.periodic(_patternInterval, (_) => showNext());
+  }
+
+  void _beginRecall() {
+    if (!mounted || _isGameOver) return;
+    if (_isQuantumMode) _orbMapping.shuffle(_random);
+    setState(() {
+      _highlightedOrbIndex = -1;
+      _showPattern = false;
+      _isTransitioning = false;
+      _timeRemaining = _timeLimit;
+    });
+    _startTimer();
   }
 
   void _startTimer() {
-    final timeLimit = widget.settings['timeLimit'] ?? 10;
-    if (timeLimit == 0) return; // Zen mode
-
-    setState(() => _timeRemaining = timeLimit);
-
+    _gameTimer?.cancel();
+    if (_timeLimit == 0) return;
     _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_timeRemaining > 0) {
-        setState(() => _timeRemaining--);
-      } else {
-        _loseLife();
+      if (!mounted || _isGameOver || _showPattern) {
         timer.cancel();
+        return;
+      }
+      if (_timeRemaining <= 1) {
+        timer.cancel();
+        setState(() => _timeRemaining = 0);
+        _handleMiss('Time expired');
+      } else {
+        setState(() => _timeRemaining--);
       }
     });
   }
 
   void _onOrbTap(int colorIndex) {
-    if (_showPattern || _isGameOver) return;
+    if (_showPattern || _isTransitioning || _isGameOver) return;
+    if (_currentIndex >= _sequence.length) return;
 
     _soundService.playColorSound(colorIndex);
-    _hapticService.lightImpact();
+    _hapticService.selectionClick();
 
     if (_sequence[_currentIndex] == colorIndex) {
       _handleCorrectAnswer();
     } else {
-      _handleWrongAnswer();
+      _handleMiss('That was ${_orbName(colorIndex)}');
     }
   }
 
   void _handleCorrectAnswer() {
+    final nextStreak = _currentStreak + 1;
+    final points = GameScoring.correctColor(
+      streak: nextStreak,
+      difficultyMultiplier: _difficultyMultiplier,
+    );
+    final completesRound = _currentIndex + 1 >= _sequence.length;
+
     setState(() {
-      _currentStreak++;
-      if (_currentStreak > _bestStreak) _bestStreak = _currentStreak;
-
-      // Calculate points with multiplier
-      final multiplier = _getMultiplier();
-      final points = (GameConstants.basePointsPerColor *
-              widget.settings['pointMultiplier']! *
-              multiplier)
-          .round();
+      _currentStreak = nextStreak;
+      _bestStreak = max(_bestStreak, nextStreak);
+      _correctAnswers++;
       _score += points;
-
       _currentIndex++;
+      _lastAward = points;
+      _feedback = 'Correct';
+      if (completesRound) {
+        _showPattern = true;
+        _isTransitioning = true;
+      }
     });
 
-    // Check combo
-    if (_currentStreak >= GameConstants.comboGoodThreshold) {
+    if (_currentStreak >= 3) {
       _hapticService.combo(_currentStreak);
-      _soundService.playCombo(_currentStreak);
     } else {
-      _soundService.playCorrect();
+      _hapticService.lightImpact();
     }
+    _soundService.playCorrect();
 
-    // Check if sequence complete
-    if (_currentIndex >= _sequence.length) {
+    if (completesRound) {
       _gameTimer?.cancel();
-      _handleLevelComplete();
+      _completeRound();
     }
   }
 
-  void _handleWrongAnswer() {
+  void _handleMiss(String message) {
+    if (_isTransitioning || _isGameOver) return;
+    _gameTimer?.cancel();
     _soundService.playWrong();
     _hapticService.error();
 
-    // Check for shield power-up
-    if (_hasShield) {
-      setState(() {
-        _hasShield = false;
-        _currentStreak = 0;
-      });
+    final losesLife = !_isZenMode;
+    setState(() {
+      if (losesLife) _lives--;
+      _mistakes++;
+      _currentStreak = 0;
+      _currentIndex = 0;
+      _roundIsPerfect = false;
+      _feedback = message;
+      _lastAward = null;
+      _isTransitioning = true;
+    });
+
+    if (losesLife && _lives <= 0) {
+      _finishGame();
       return;
     }
 
-    _loseLife();
+    _phaseTimer?.cancel();
+    _phaseTimer = Timer(const Duration(milliseconds: 750), () {
+      if (mounted && !_isGameOver) _presentPattern();
+    });
   }
 
-  void _loseLife() {
-    _gameTimer?.cancel();
-    setState(() {
-      _lives--;
-      _currentStreak = 0;
-      _shouldShake = true;
-    });
-
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) setState(() => _shouldShake = false);
-    });
-
-    if (_lives <= 0) {
-      _handleGameOver();
-    } else {
-      // Retry current sequence
-      setState(() => _currentIndex = 0);
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          setState(() => _showPattern = true);
-          _displayPattern();
-        }
-      });
-    }
-  }
-
-  void _handleLevelComplete() {
+  void _completeRound() {
+    final bonus = GameScoring.roundBonus(
+      sequenceLength: _sequence.length,
+      difficultyMultiplier: _difficultyMultiplier,
+      timeRemaining: _timeRemaining,
+      perfect: _roundIsPerfect,
+    );
     _soundService.playVictory();
     _hapticService.success();
 
     setState(() {
-      _showCelebration = true;
-      _celebrationType = CelebrationType.levelComplete;
+      _score += bonus;
+      _lastAward = bonus;
+      _feedback = _roundIsPerfect ? 'Perfect recall' : 'Round clear';
     });
 
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        setState(() {
-          _showCelebration = false;
-          _sequence.add(_random.nextInt(5));
-          _currentIndex = 0;
-          _level++;
-          _showPattern = true;
-        });
-        _displayPattern();
-      }
+    _phaseTimer?.cancel();
+    _phaseTimer = Timer(const Duration(milliseconds: 850), () {
+      if (!mounted || _isGameOver) return;
+      setState(() {
+        _sequence.add(_random.nextInt(5));
+        _level++;
+        _roundIsPerfect = true;
+        _isTransitioning = false;
+      });
+      _presentPattern();
     });
   }
 
-  void _handleGameOver() {
+  void _finishGame() {
+    _cancelTimers();
     _soundService.playGameOver();
     _hapticService.gameOver();
-
-    setState(() => _isGameOver = true);
-  }
-
-  double _getMultiplier() {
-    if (_currentStreak >= GameConstants.comboLegendaryThreshold) {
-      return GameConstants.comboLegendaryMultiplier;
-    }
-    if (_currentStreak >= GameConstants.comboFireThreshold) {
-      return GameConstants.comboFireMultiplier;
-    }
-    if (_currentStreak >= GameConstants.comboAmazingThreshold) {
-      return GameConstants.comboAmazingMultiplier;
-    }
-    if (_currentStreak >= GameConstants.comboGoodThreshold) {
-      return GameConstants.comboGoodMultiplier;
-    }
-    return 1.0;
-  }
-
-  void _usePowerUp(PowerUpType type) {
-    if (!_powerUps.hasPowerUp(type)) return;
-
-    _soundService.playPowerUp();
-    _hapticService.powerUp();
-
     setState(() {
-      _powerUps = _powerUps.usePowerUp(type);
-      _activePowerUp = type;
+      _isGameOver = true;
+      _isTransitioning = true;
+      _showPattern = false;
+      _feedback = null;
     });
-
-    switch (type) {
-      case PowerUpType.shield:
-        setState(() => _hasShield = true);
-        break;
-      case PowerUpType.hint:
-        _showHint();
-        break;
-      case PowerUpType.timeFreeze:
-        _freezeTimer();
-        break;
-      default:
-        break;
-    }
-
-    // Clear active power-up indicator after delay
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => _activePowerUp = null);
-    });
+    _saveResult();
   }
 
-  void _showHint() {
-    // Flash the next 2 colors
-    for (int i = 0; i < 2 && _currentIndex + i < _sequence.length; i++) {
-      final targetIndex = _currentIndex + i;
-      Future.delayed(Duration(milliseconds: i * 300), () {
-        if (mounted) {
-          setState(() => _highlightedOrbIndex = _sequence[targetIndex]);
-          Future.delayed(const Duration(milliseconds: 200), () {
-            if (mounted) setState(() => _highlightedOrbIndex = -1);
-          });
-        }
-      });
-    }
+  Future<void> _saveResult() async {
+    if (_resultSaved) return;
+    _resultSaved = true;
+    final playTime = DateTime.now().difference(_startedAt);
+    final PlayerStats current = await _storageService.getPlayerStats();
+    final updated = current.recordGame(
+      score: _score,
+      streak: _bestStreak,
+      sequenceLength: _sequence.length,
+      correctAnswers: _correctAnswers,
+      mistakes: _mistakes,
+      playTime: playTime,
+      gameMode: _isQuantumMode
+          ? 'quantum'
+          : _isZenMode
+          ? 'zen'
+          : 'classic',
+      difficulty: widget.difficulty,
+    );
+    await _storageService.setPlayerStats(updated);
+    await _storageService.setHighScore(updated.highScore);
+    await _storageService.setBestStreak(updated.bestStreak);
   }
 
-  void _freezeTimer() {
-    _gameTimer?.cancel();
-    Future.delayed(const Duration(seconds: 5), () {
-      if (mounted && !_showPattern && !_isGameOver) {
-        _startTimer();
-      }
-    });
-  }
+  String _orbName(int index) =>
+      const ['Coral', 'Mint', 'Blue', 'Gold', 'Violet'][index % 5];
 
   @override
   Widget build(BuildContext context) {
-    ResponsiveUtils.init(context);
-    
-    // Determine accent color based on mode
-    Color accentColor = AppColors.orbBlue;
-    String gameTitle = 'CLASSIC ECHO';
-    if (_isQuantumMode) {
-      accentColor = AppColors.orbPurple;
-      gameTitle = 'QUANTUM FLUX';
-    } else if (widget.difficulty == 'zen') {
-      accentColor = AppColors.orbGreen;
-      gameTitle = 'ZEN MODE';
-    }
-
     return Scaffold(
-      body: ScreenShake(
-        shake: _shouldShake,
-        intensity: 10,
-        child: GameGradientBackground(
-          showOverlay: true,
-          child: SafeArea(
-            child: Stack(
-              children: [
-                // Main game content
-                Column(
-                  children: [
-                    _buildHeader(),
-                    Expanded(
-                      child: _isGameOver
-                          ? _buildGameOverContent()
-                          : _buildGameContent(),
-                    ),
-                  ],
-                ),
-
-                // Celebration overlay
-                if (_showCelebration && _celebrationType != null)
-                  CelebrationOverlay(
-                    type: _celebrationType!,
-                    onComplete: () {
-                      setState(() => _showCelebration = false);
-                    },
+      body: GameGradientBackground(
+        showOverlay: false,
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: _isGameOver
+                        ? _buildGameOver()
+                        : _buildResponsiveGame(),
                   ),
-
-                // Combo indicator
-                if (_currentStreak >= GameConstants.comboGoodThreshold &&
-                    !_showPattern)
-                  Positioned(
-                    top: 120,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: ComboIndicator(streak: _currentStreak),
-                    ),
-                  ),
-                  
-                // Tutorial overlay
-                if (_showTutorial)
-                  TutorialOverlay(
-                    gameTitle: gameTitle,
-                    accentColor: accentColor,
-                    steps: _tutorialSteps,
-                    onComplete: _completeTutorial,
-                    onSkip: _skipTutorial,
-                  ),
-              ],
-            ),
+                ],
+              ),
+              if (_showTutorial) _buildTutorial(),
+            ],
           ),
         ),
       ),
@@ -605,350 +416,394 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Left: Back button + Score
+          SizedBox.square(
+            dimension: 48,
+            child: IconButton.filledTonal(
+              tooltip: 'Leave game',
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(LucideIcons.x, size: 20),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_modeTitle, style: AppTextStyles.titleSmall),
+                Text(
+                  'Level $_level  •  ${_sequence.length} signals',
+                  style: AppTextStyles.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          _MetricChip(
+            icon: LucideIcons.star,
+            label: 'Score',
+            value: '$_score',
+            color: AppColors.accentGold,
+          ),
+          const SizedBox(width: 8),
+          if (_timeLimit > 0 && !_showPattern)
+            CircularTimer(
+              timeRemaining: _timeRemaining,
+              totalTime: _timeLimit,
+              size: 44,
+            )
+          else
+            LivesDisplay(
+              lives: _lives,
+              maxLives: widget.settings['lives'] ?? 3,
+              size: 18,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResponsiveGame() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 720 || constraints.maxHeight < 500;
+        final status = _buildStatusPanel();
+        final board = _buildOrbBoard(wide: wide);
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: wide ? 32 : 20,
+            vertical: 16,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
+            child: wide
+                ? Row(
+                    children: [
+                      Expanded(child: status),
+                      const SizedBox(width: 32),
+                      Expanded(flex: 2, child: board),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [status, const SizedBox(height: 28), board],
+                  ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusPanel() {
+    final progress = _sequence.isEmpty ? 0.0 : _currentIndex / _sequence.length;
+    final heading = _showPattern
+        ? 'Watch the signal'
+        : _isTransitioning
+        ? (_feedback ?? 'Hold that thought')
+        : 'Repeat the pattern';
+    final supporting = _showPattern
+        ? 'Each icon flashes once. Remember the order.'
+        : _isTransitioning
+        ? (_lastAward == null
+              ? 'The sequence will replay.'
+              : '+$_lastAward points')
+        : 'Tap ${_currentIndex + 1} of ${_sequence.length}';
+
+    return Semantics(
+      liveRegion: true,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _accentColor.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: _accentColor.withValues(alpha: 0.38)),
+            ),
+            child: Text(
+              _showPattern ? 'WATCH' : 'YOUR TURN',
+              style: AppTextStyles.labelMedium.copyWith(
+                color: _accentColor,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            heading,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.headlineMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            supporting,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyMedium,
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: 280,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: LinearProgressIndicator(
+                minHeight: 7,
+                value: _showPattern ? null : progress.clamp(0, 1),
+                backgroundColor: AppColors.surfaceLight,
+                color: _accentColor,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    LucideIcons.x,
-                    color: AppColors.textSecondary,
-                    size: 18,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Score
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    LucideIcons.star,
+              const Icon(LucideIcons.flame, size: 17, color: AppColors.orbRed),
+              const SizedBox(width: 6),
+              Text('$_currentStreak streak', style: AppTextStyles.labelMedium),
+              if (_currentStreak >= 3) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '×${GameScoring.comboMultiplier(_currentStreak)}',
+                  style: AppTextStyles.labelMedium.copyWith(
                     color: AppColors.accentGold,
-                    size: 16,
+                    fontWeight: FontWeight.w700,
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '$_score',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.accentGold,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ],
-          ),
-
-          // Center: Timer (only when playing)
-          if (widget.settings['timeLimit'] != 0 && !_showPattern)
-            CircularTimer(
-              timeRemaining: _timeRemaining,
-              totalTime: widget.settings['timeLimit'] ?? 10,
-              size: 44,
-              showText: true,
-            ),
-
-          // Right: Lives
-          LivesDisplay(
-            lives: _lives,
-            maxLives: widget.settings['lives'] ?? 3,
-            size: 20,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGameContent() {
-    final orbSize = ResponsiveUtils.getGameButtonSize().clamp(55.0, 80.0);
-    final ringRadius = orbSize * 1.8; // Distance from center to orbs
+  Widget _buildOrbBoard({required bool wide}) {
+    final orbSize = wide ? 78.0 : 72.0;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: GlassContainer(
+          padding: const EdgeInsets.all(20),
+          backgroundColor: AppColors.surface.withValues(alpha: 0.72),
+          borderColor: _accentColor.withValues(alpha: 0.22),
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 14,
+            runSpacing: 14,
+            children: List.generate(5, (physicalIndex) {
+              final colorIndex = _orbMapping[physicalIndex];
+              return ColorOrb(
+                key: ValueKey('orb-$physicalIndex-$colorIndex'),
+                colorIndex: colorIndex,
+                size: orbSize,
+                onTap: () => _onOrbTap(colorIndex),
+                isDisabled: _showPattern || _isTransitioning,
+                isHighlighted: _highlightedOrbIndex == colorIndex,
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Reactor Core - Circular Orb Layout
-        SizedBox(
-          width: ringRadius * 2 + orbSize * 1.5,
-          height: ringRadius * 2 + orbSize * 1.5,
-          child: Stack(
-            alignment: Alignment.center,
+  Widget _buildGameOver() {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: GlassContainer(
+          width: 440,
+          padding: const EdgeInsets.all(28),
+          backgroundColor: AppColors.surface.withValues(alpha: 0.92),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Outer Ring Glow (decorative)
               Container(
-                width: ringRadius * 2 + orbSize * 0.5,
-                height: ringRadius * 2 + orbSize * 0.5,
+                width: 64,
+                height: 64,
                 decoration: BoxDecoration(
+                  color: AppColors.accentError.withValues(alpha: 0.14),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: (_showPattern ? AppColors.orbBlue : AppColors.orbGreen)
-                        .withOpacity(0.2),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (_showPattern ? AppColors.orbBlue : AppColors.orbGreen)
-                          .withOpacity(0.1),
-                      blurRadius: 30,
-                      spreadRadius: 5,
-                    ),
-                  ],
+                ),
+                child: const Icon(
+                  LucideIcons.flag,
+                  color: AppColors.accentError,
+                  size: 30,
                 ),
               ),
-
-              // Central Status Hub
-              _buildCentralHub(),
-
-              // Orbs positioned in a circle
-              ..._buildCircularOrbs(orbSize, ringRadius),
+              const SizedBox(height: 18),
+              Text('Session complete', style: AppTextStyles.headlineMedium),
+              const SizedBox(height: 8),
+              Text(
+                '$_score',
+                style: AppTextStyles.score.copyWith(fontSize: 56),
+              ),
+              Text('points', style: AppTextStyles.bodyMedium),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ResultStat(label: 'Level', value: '$_level'),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ResultStat(
+                      label: 'Best streak',
+                      value: '$_bestStreak',
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _ResultStat(
+                      label: 'Sequence',
+                      value: '${_sequence.length}',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              NeonButton(
+                text: 'Play again',
+                width: double.infinity,
+                color: _accentColor,
+                icon: LucideIcons.refreshCw,
+                onPressed: _startNewGame,
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () =>
+                    Navigator.popUntil(context, (route) => route.isFirst),
+                child: const Text('Back to modes'),
+              ),
             ],
           ),
-        ).animate().fadeIn().scale(
-              begin: const Offset(0.9, 0.9),
-              duration: 400.ms,
-              curve: Curves.easeOutBack,
-            ),
+        ),
+      ),
+    );
+  }
 
-        const SizedBox(height: 40),
+  Widget _buildTutorial() {
+    final description = _isQuantumMode
+        ? 'Watch the colors and icons, then repeat them after the buttons shuffle. Positions are a distraction.'
+        : _isZenMode
+        ? 'Watch each signal, then tap the same icons in order. There is no timer and mistakes do not end the session.'
+        : 'Watch each signal, then tap the same color-and-icon buttons in order. Longer streaks earn a score multiplier.';
 
-        // Power-ups at the bottom (more ergonomic)
-        PowerUpBar(
-          inventory: _powerUps,
-          activePowerUp: _activePowerUp,
-          onPowerUpTap: _usePowerUp,
-          isDisabled: _showPattern,
-        ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
-
-        // Shield indicator
-        if (_hasShield)
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.powerUpShield.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.powerUpShield.withOpacity(0.5),
-                ),
-              ),
-              child: Row(
+    return Positioned.fill(
+      child: ColoredBox(
+        color: const Color(0xCC070B16),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: GlassContainer(
+              width: 420,
+              padding: const EdgeInsets.all(28),
+              backgroundColor: AppColors.surface,
+              borderColor: _accentColor.withValues(alpha: 0.45),
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    LucideIcons.shield,
-                    color: AppColors.powerUpShield,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
+                  Icon(LucideIcons.brain, color: _accentColor, size: 42),
+                  const SizedBox(height: 18),
+                  Text(_modeTitle, style: AppTextStyles.headlineMedium),
+                  const SizedBox(height: 10),
                   Text(
-                    'Shield Active',
-                    style: AppTextStyles.labelMedium.copyWith(
-                      color: AppColors.powerUpShield,
-                    ),
+                    description,
+                    style: AppTextStyles.bodyLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  NeonButton(
+                    text: 'Start training',
+                    width: double.infinity,
+                    color: _accentColor,
+                    icon: LucideIcons.play,
+                    onPressed: _completeTutorial,
                   ),
                 ],
               ),
-            )
-                .animate(onPlay: (c) => c.repeat(reverse: true))
-                .shimmer(duration: 1500.ms),
+            ),
           ),
-      ],
-    );
-  }
-
-  /// The central hub showing status and level
-  Widget _buildCentralHub() {
-    return Container(
-      width: 100,
-      height: 100,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            AppColors.surface.withOpacity(0.8),
-            AppColors.surface.withOpacity(0.4),
-          ],
         ),
-        border: Border.all(
-          color: (_showPattern ? AppColors.orbBlue : AppColors.orbGreen)
-              .withOpacity(0.5),
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: (_showPattern ? AppColors.orbBlue : AppColors.orbGreen)
-                .withOpacity(0.3),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            _showPattern ? 'WATCH' : 'GO!',
-            style: AppTextStyles.labelLarge.copyWith(
-              color: _showPattern ? AppColors.orbBlue : AppColors.orbGreen,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Level $_level',
-            style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.textMuted,
-            ),
-          ),
-          Text(
-            '${_sequence.length} colors',
-            style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.textMuted,
-              fontSize: 10,
-            ),
-          ),
-        ],
       ),
     );
   }
+}
 
-  /// Generate orbs positioned in a circle
-  List<Widget> _buildCircularOrbs(double orbSize, double radius) {
-    const int numOrbs = 5;
-    const double startAngle = -90 * (3.14159 / 180); // Start from top
+class _MetricChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
 
-    return List.generate(numOrbs, (index) {
-      final angle = startAngle + (index * 2 * 3.14159 / numOrbs);
-      final x = radius * cos(angle);
-      final y = radius * sin(angle);
-      final colorIndex = _orbMapping[index];
+  const _MetricChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
-      return Positioned(
-        left: radius + x - orbSize / 2 + orbSize * 0.75,
-        top: radius + y - orbSize / 2 + orbSize * 0.75,
-        child: ColorOrb(
-          colorIndex: colorIndex,
-          size: orbSize,
-          onTap: () => _onOrbTap(colorIndex),
-          isDisabled: _showPattern,
-          isHighlighted: _highlightedOrbIndex == colorIndex,
-          showRipple: true,
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$label $value',
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.11),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.28)),
         ),
-      );
-    });
-  }
-
-  void _shuffleOrbs() {
-    setState(() {
-      _orbMapping.shuffle();
-      // Play shuffle sound/haptic
-      _soundService.playPowerUp(); // Use powerup sound for now
-      _hapticService.mediumImpact();
-    });
-  }
-
-  Widget _buildGameOverContent() {
-    return Center(
-      child: GlassContainer(
-        padding: const EdgeInsets.all(32),
-        child: Column(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Icon(icon, color: color, size: 17),
+            const SizedBox(width: 6),
             Text(
-              'GAME OVER',
-              style: AppTextStyles.displaySmall.copyWith(
-                color: AppColors.accentError,
+              value,
+              style: AppTextStyles.labelLarge.copyWith(
+                color: color,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Final Score',
-              style: AppTextStyles.labelMedium,
-            ),
-            Text(
-              '$_score',
-              style: AppTextStyles.score.copyWith(fontSize: 64),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildStatItem('Best Streak', '$_bestStreak'),
-                const SizedBox(width: 24),
-                _buildStatItem('Level', '$_level'),
-              ],
-            ),
-            const SizedBox(height: 32),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                NeonButton(
-                  text: 'Home',
-                  color: AppColors.textMuted,
-                  width: 120,
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const HomeScreen(),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 16),
-                NeonButton(
-                  text: 'Play Again',
-                  color: AppColors.orbGreen,
-                  width: 140,
-                  icon: LucideIcons.refreshCw,
-                  onPressed: _restartGame,
-                ),
-              ],
             ),
           ],
         ),
       ),
-    ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8));
-  }
-
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(label, style: AppTextStyles.labelSmall),
-        Text(
-          value,
-          style: AppTextStyles.headlineMedium.copyWith(
-            color: AppColors.accentGold,
-          ),
-        ),
-      ],
     );
   }
+}
 
-  void _restartGame() {
-    setState(() {
-      _score = 0;
-      _lives = widget.settings['lives'] ?? 3;
-      _currentStreak = 0;
-      _bestStreak = 0;
-      _level = 1;
-      _isGameOver = false;
-      _hasShield = false;
-      _orbMapping = [0, 1, 2, 3, 4];
-    });
-    _startGame();
+class _ResultStat extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _ResultStat({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        children: [
+          Text(value, style: AppTextStyles.titleLarge),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: AppTextStyles.labelSmall,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 }

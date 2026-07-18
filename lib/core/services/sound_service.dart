@@ -9,7 +9,7 @@ class SoundService {
   // AudioPlayers removed to prevent issues
   // final AudioPlayer _audioPlayer = AudioPlayer();
   // final AudioPlayer _bgMusicPlayer = AudioPlayer();
-  
+
   bool _enabled = false; // Disabled by default
   double _volume = 0.0;
 

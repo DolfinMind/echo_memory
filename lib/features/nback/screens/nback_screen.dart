@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_text_styles.dart';
 import '../../../shared/widgets/animated_gradient.dart';
@@ -9,7 +9,6 @@ import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/tutorial_overlay.dart';
 import '../../../shared/widgets/animated_demo.dart';
 import '../../../core/services/tutorial_service.dart';
-import '../../game/widgets/score_display.dart';
 import '../controllers/nback_controller.dart';
 
 class NBackScreen extends StatefulWidget {
@@ -22,8 +21,7 @@ class NBackScreen extends StatefulWidget {
 class _NBackScreenState extends State<NBackScreen> {
   late ReflexController _controller;
   bool _showTutorial = false;
-  bool _tutorialChecked = false;
-  
+
   static const List<Color> cardColors = [
     AppColors.orbRed,
     AppColors.orbBlue,
@@ -32,7 +30,7 @@ class _NBackScreenState extends State<NBackScreen> {
     AppColors.orbPurple,
     Color(0xFFFF9F43),
   ];
-  
+
   static const List<IconData> cardShapes = [
     LucideIcons.circle,
     LucideIcons.square,
@@ -48,7 +46,7 @@ class _NBackScreenState extends State<NBackScreen> {
     _controller.startGame();
     _checkTutorial();
   }
-  
+
   Future<void> _checkTutorial() async {
     final tutorialService = await TutorialService.getInstance();
     if (!tutorialService.hasSeenTutorial(GameModes.reflexMatch)) {
@@ -56,9 +54,8 @@ class _NBackScreenState extends State<NBackScreen> {
         setState(() => _showTutorial = true);
       }
     }
-    _tutorialChecked = true;
   }
-  
+
   void _completeTutorial() async {
     final tutorialService = await TutorialService.getInstance();
     await tutorialService.markTutorialComplete(GameModes.reflexMatch);
@@ -67,7 +64,7 @@ class _NBackScreenState extends State<NBackScreen> {
       _controller.showNextCard();
     }
   }
-  
+
   void _skipTutorial() async {
     final tutorialService = await TutorialService.getInstance();
     await tutorialService.markTutorialComplete(GameModes.reflexMatch);
@@ -76,49 +73,57 @@ class _NBackScreenState extends State<NBackScreen> {
       _controller.showNextCard();
     }
   }
-  
+
   List<TutorialStep> get _tutorialSteps => [
     TutorialStep(
       title: 'Watch the Card',
-      description: 'A card with a color and shape appears. Take a moment to memorize it.',
+      description:
+          'A card with a color and shape appears. Take a moment to memorize it.',
       icon: LucideIcons.eye,
       demo: _buildTutorialCard(AppColors.orbBlue, LucideIcons.star),
     ),
-    TutorialStep(
+    const TutorialStep(
       title: 'Compare Cards',
-      description: 'When the next card appears, compare it to the previous one.',
+      description:
+          'When the next card appears, compare it to the previous one.',
       icon: LucideIcons.gitCompare,
-      demo: const CardComparisonDemo(),
+      demo: CardComparisonDemo(),
     ),
     TutorialStep(
       title: 'Make Your Choice',
-      description: 'Tap SAME if the cards match exactly, or DIFFERENT if not. Build your streak!',
+      description:
+          'Tap SAME if the cards match exactly, or DIFFERENT if not. Build your streak!',
       icon: LucideIcons.zap,
       demo: _buildButtonsDemo(),
     ),
   ];
-  
+
   Widget _buildTutorialCard(Color color, IconData icon) {
     return Container(
-      width: 100,
-      height: 130,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color, width: 3),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.5),
-            blurRadius: 25,
-            spreadRadius: 5,
+          width: 100,
+          height: 130,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.5),
+                blurRadius: 25,
+                spreadRadius: 5,
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Icon(icon, color: color, size: 50),
-    ).animate(onPlay: (c) => c.repeat(reverse: true))
-        .scale(begin: const Offset(1, 1), end: const Offset(1.05, 1.05), duration: 1500.ms);
+          child: Icon(icon, color: color, size: 50),
+        )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .scale(
+          begin: const Offset(1, 1),
+          end: const Offset(1.05, 1.05),
+          duration: 1500.ms,
+        );
   }
-  
+
   Widget _buildButtonsDemo() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -129,14 +134,19 @@ class _NBackScreenState extends State<NBackScreen> {
       ],
     );
   }
-  
-  Widget _buildDemoButton(String label, Color color, IconData icon, bool pulse) {
+
+  Widget _buildDemoButton(
+    String label,
+    Color color,
+    IconData icon,
+    bool pulse,
+  ) {
     Widget button = Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.5), width: 2),
+        border: Border.all(color: color.withValues(alpha: 0.5), width: 2),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -147,10 +157,15 @@ class _NBackScreenState extends State<NBackScreen> {
         ],
       ),
     );
-    
+
     if (pulse) {
-      return button.animate(onPlay: (c) => c.repeat(reverse: true))
-          .scale(begin: const Offset(1, 1), end: const Offset(1.1, 1.1), duration: 800.ms);
+      return button
+          .animate(onPlay: (c) => c.repeat(reverse: true))
+          .scale(
+            begin: const Offset(1, 1),
+            end: const Offset(1.1, 1.1),
+            duration: 800.ms,
+          );
     }
     return button;
   }
@@ -204,23 +219,41 @@ class _NBackScreenState extends State<NBackScreen> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(LucideIcons.arrowLeft, color: Colors.white70, size: 24),
+            icon: const Icon(
+              LucideIcons.arrowLeft,
+              color: Colors.white70,
+              size: 24,
+            ),
           ),
           Row(
             children: [
-              const Icon(LucideIcons.flame, color: AppColors.orbYellow, size: 18),
+              const Icon(
+                LucideIcons.flame,
+                color: AppColors.orbYellow,
+                size: 18,
+              ),
               const SizedBox(width: 4),
-              Text('${_controller.streak}', style: AppTextStyles.titleMedium.copyWith(color: AppColors.orbYellow)),
+              Text(
+                '${_controller.streak}',
+                style: AppTextStyles.titleMedium.copyWith(
+                  color: AppColors.orbYellow,
+                ),
+              ),
               const SizedBox(width: 16),
               Text('${_controller.score}', style: AppTextStyles.titleMedium),
             ],
           ),
           Row(
-            children: List.generate(3, (i) => Icon(
-              LucideIcons.heart,
-              color: i < _controller.lives ? AppColors.orbRed : AppColors.textMuted.withOpacity(0.3),
-              size: 18,
-            )),
+            children: List.generate(
+              3,
+              (i) => Icon(
+                LucideIcons.heart,
+                color: i < _controller.lives
+                    ? AppColors.orbRed
+                    : AppColors.textMuted.withValues(alpha: 0.3),
+                size: 18,
+              ),
+            ),
           ),
         ],
       ),
@@ -252,20 +285,25 @@ class _NBackScreenState extends State<NBackScreen> {
           const SizedBox(height: 16),
           Text('REFLEX MATCH', style: AppTextStyles.headlineLarge),
           const SizedBox(height: 32),
-          
+
           // Demo section
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: Column(
               children: [
-                Text('HOW TO PLAY', style: AppTextStyles.titleMedium.copyWith(color: AppColors.orbBlue)),
+                Text(
+                  'HOW TO PLAY',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: AppColors.orbBlue,
+                  ),
+                ),
                 const SizedBox(height: 16),
-                
+
                 // Step 1
                 _buildDemoStep(
                   step: '1',
@@ -273,7 +311,7 @@ class _NBackScreenState extends State<NBackScreen> {
                   child: _buildMiniCard(AppColors.orbBlue, LucideIcons.star),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Step 2
                 _buildDemoStep(
                   step: '2',
@@ -281,17 +319,25 @@ class _NBackScreenState extends State<NBackScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildMiniCard(AppColors.orbBlue, LucideIcons.star, opacity: 0.4),
+                      _buildMiniCard(
+                        AppColors.orbBlue,
+                        LucideIcons.star,
+                        opacity: 0.4,
+                      ),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Icon(LucideIcons.arrowRight, size: 20, color: Colors.white54),
+                        child: Icon(
+                          LucideIcons.arrowRight,
+                          size: 20,
+                          color: Colors.white54,
+                        ),
                       ),
                       _buildMiniCard(AppColors.orbGreen, LucideIcons.circle),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Step 3
                 _buildDemoStep(
                   step: '3',
@@ -300,21 +346,39 @@ class _NBackScreenState extends State<NBackScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppColors.orbGreen.withOpacity(0.2),
+                          color: AppColors.orbGreen.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text('SAME', style: TextStyle(color: AppColors.orbGreen, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'SAME',
+                          style: TextStyle(
+                            color: AppColors.orbGreen,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppColors.orbRed.withOpacity(0.2),
+                          color: AppColors.orbRed.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text('DIFF', style: TextStyle(color: AppColors.orbRed, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'DIFF',
+                          style: TextStyle(
+                            color: AppColors.orbRed,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -322,7 +386,7 @@ class _NBackScreenState extends State<NBackScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () => _controller.showNextCard(),
@@ -335,7 +399,12 @@ class _NBackScreenState extends State<NBackScreen> {
               children: [
                 const Icon(LucideIcons.play, size: 20),
                 const SizedBox(width: 8),
-                Text('START GAME', style: AppTextStyles.titleMedium.copyWith(color: Colors.white)),
+                Text(
+                  'START GAME',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
               ],
             ),
           ),
@@ -344,7 +413,11 @@ class _NBackScreenState extends State<NBackScreen> {
     ).animate().fadeIn();
   }
 
-  Widget _buildDemoStep({required String step, required String text, required Widget child}) {
+  Widget _buildDemoStep({
+    required String step,
+    required String text,
+    required Widget child,
+  }) {
     return Row(
       children: [
         Container(
@@ -352,9 +425,14 @@ class _NBackScreenState extends State<NBackScreen> {
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.orbPurple.withOpacity(0.3),
+            color: AppColors.orbPurple.withValues(alpha: 0.3),
           ),
-          child: Center(child: Text(step, style: const TextStyle(fontWeight: FontWeight.bold))),
+          child: Center(
+            child: Text(
+              step,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -378,7 +456,7 @@ class _NBackScreenState extends State<NBackScreen> {
         width: 50,
         height: 60,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: color, width: 2),
         ),
@@ -387,14 +465,15 @@ class _NBackScreenState extends State<NBackScreen> {
     );
   }
 
-
   Widget _buildGamePlay() {
     final card = _controller.currentCard;
     if (card == null) return const SizedBox();
-    
+
     // Show inline feedback for correct answers
-    final showCorrectFlash = _controller.lastAnswerCorrect == true && _controller.state == ReflexState.waiting;
-    
+    final showCorrectFlash =
+        _controller.lastAnswerCorrect == true &&
+        _controller.state == ReflexState.waiting;
+
     return Column(
       children: [
         const Spacer(),
@@ -403,18 +482,24 @@ class _NBackScreenState extends State<NBackScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(LucideIcons.check, color: AppColors.orbGreen, size: 28),
+              const Icon(
+                LucideIcons.check,
+                color: AppColors.orbGreen,
+                size: 28,
+              ),
               const SizedBox(width: 8),
               Text(
-                '+${10 + (_controller.streak * 2)}',
-                style: AppTextStyles.headlineMedium.copyWith(color: AppColors.orbGreen),
+                '+${_controller.lastAward}',
+                style: AppTextStyles.headlineMedium.copyWith(
+                  color: AppColors.orbGreen,
+                ),
               ),
             ],
           ).animate().fadeIn().scale()
         else
           Text(
-            _controller.isFirstCard 
-                ? 'MEMORIZE THIS CARD' 
+            _controller.isFirstCard
+                ? 'MEMORIZE THIS CARD'
                 : 'SAME or DIFFERENT?',
             style: AppTextStyles.headlineMedium.copyWith(
               color: AppColors.orbBlue,
@@ -435,7 +520,10 @@ class _NBackScreenState extends State<NBackScreen> {
               onPressed: () => _controller.showNextCard(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.orbBlue,
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 48,
+                  vertical: 16,
+                ),
               ),
               child: const Text('NEXT CARD'),
             ),
@@ -446,29 +534,36 @@ class _NBackScreenState extends State<NBackScreen> {
   }
 
   Widget _buildCard(ReflexCard card, {bool showCorrectGlow = false}) {
-    final color = showCorrectGlow ? AppColors.orbGreen : cardColors[card.colorIndex];
+    final color = showCorrectGlow
+        ? AppColors.orbGreen
+        : cardColors[card.colorIndex];
     final shape = cardShapes[card.shapeIndex];
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       width: 160,
       height: 200,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: color, width: showCorrectGlow ? 4 : 3),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(showCorrectGlow ? 0.6 : 0.4),
+            color: color.withValues(alpha: showCorrectGlow ? 0.6 : 0.4),
             blurRadius: showCorrectGlow ? 40 : 30,
             spreadRadius: showCorrectGlow ? 8 : 5,
           ),
         ],
       ),
-      child: Icon(shape, size: 80, color: showCorrectGlow ? AppColors.orbGreen : cardColors[card.colorIndex]),
+      child: Icon(
+        shape,
+        size: 80,
+        color: showCorrectGlow
+            ? AppColors.orbGreen
+            : cardColors[card.colorIndex],
+      ),
     );
   }
-
 
   Widget _buildButtons() {
     return Padding(
@@ -508,15 +603,18 @@ class _NBackScreenState extends State<NBackScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.5), width: 2),
+          border: Border.all(color: color.withValues(alpha: 0.5), width: 2),
         ),
         child: Column(
           children: [
             Icon(icon, color: color, size: 32),
             const SizedBox(height: 8),
-            Text(label, style: AppTextStyles.labelMedium.copyWith(color: color)),
+            Text(
+              label,
+              style: AppTextStyles.labelMedium.copyWith(color: color),
+            ),
           ],
         ),
       ),
@@ -525,7 +623,7 @@ class _NBackScreenState extends State<NBackScreen> {
 
   Widget _buildFeedback() {
     final correct = _controller.lastAnswerCorrect ?? false;
-    
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -545,7 +643,9 @@ class _NBackScreenState extends State<NBackScreen> {
           const SizedBox(height: 40),
           ElevatedButton(
             onPressed: () => _controller.continueGame(),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.orbPurple),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.orbPurple,
+            ),
             child: const Text('CONTINUE'),
           ),
         ],
@@ -564,8 +664,14 @@ class _NBackScreenState extends State<NBackScreen> {
             const SizedBox(height: 16),
             Text('Game Over!', style: AppTextStyles.headlineMedium),
             const SizedBox(height: 8),
-            Text('Score: ${_controller.score}', style: AppTextStyles.titleLarge),
-            Text('Best Streak: ${_controller.streak}', style: AppTextStyles.bodyLarge),
+            Text(
+              'Score: ${_controller.score}',
+              style: AppTextStyles.titleLarge,
+            ),
+            Text(
+              'Best Streak: ${_controller.streak}',
+              style: AppTextStyles.bodyLarge,
+            ),
             const SizedBox(height: 24),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -580,7 +686,9 @@ class _NBackScreenState extends State<NBackScreen> {
                     _controller.startGame();
                     _controller.showNextCard();
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.orbPurple),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.orbPurple,
+                  ),
                   child: const Text('Play Again'),
                 ),
               ],

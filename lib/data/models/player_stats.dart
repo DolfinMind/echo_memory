@@ -1,6 +1,9 @@
 /// Player statistics model for Echo Memory
 /// Persistent player progress and achievements tracking
+library;
+
 import 'dart:convert';
+import 'dart:math';
 
 class PlayerStats {
   final int totalGamesPlayed;
@@ -116,18 +119,18 @@ class PlayerStats {
   }) {
     final newModeHighScores = Map<String, int>.from(modeHighScores);
     if (gameMode != null) {
-      newModeHighScores[gameMode] =
-          (newModeHighScores[gameMode] ?? 0) < score
-              ? score
-              : newModeHighScores[gameMode]!;
+      newModeHighScores[gameMode] = max(
+        newModeHighScores[gameMode] ?? 0,
+        score,
+      );
     }
 
     final newDifficultyHighScores = Map<String, int>.from(difficultyHighScores);
     if (difficulty != null) {
-      newDifficultyHighScores[difficulty] =
-          (newDifficultyHighScores[difficulty] ?? 0) < score
-              ? score
-              : newDifficultyHighScores[difficulty]!;
+      newDifficultyHighScores[difficulty] = max(
+        newDifficultyHighScores[difficulty] ?? 0,
+        score,
+      );
     }
 
     return copyWith(
@@ -135,8 +138,7 @@ class PlayerStats {
       totalScore: totalScore + score,
       highScore: score > highScore ? score : null,
       bestStreak: streak > bestStreak ? streak : null,
-      longestSequence:
-          sequenceLength > longestSequence ? sequenceLength : null,
+      longestSequence: sequenceLength > longestSequence ? sequenceLength : null,
       totalCorrectAnswers: totalCorrectAnswers + correctAnswers,
       totalMistakes: totalMistakes + mistakes,
       modeHighScores: newModeHighScores,
@@ -182,16 +184,16 @@ class PlayerStats {
       dailyChallengeStreak: json['dailyChallengeStreak'] ?? 0,
       powerUpsUsed: json['powerUpsUsed'] ?? 0,
       modeHighScores: Map<String, int>.from(json['modeHighScores'] ?? {}),
-      difficultyHighScores:
-          Map<String, int>.from(json['difficultyHighScores'] ?? {}),
+      difficultyHighScores: Map<String, int>.from(
+        json['difficultyHighScores'] ?? {},
+      ),
       lastPlayedDate: json['lastPlayedDate'] != null
           ? DateTime.parse(json['lastPlayedDate'])
           : null,
       firstPlayedDate: json['firstPlayedDate'] != null
           ? DateTime.parse(json['firstPlayedDate'])
           : null,
-      totalPlayTime:
-          Duration(seconds: json['totalPlayTimeSeconds'] ?? 0),
+      totalPlayTime: Duration(seconds: json['totalPlayTimeSeconds'] ?? 0),
     );
   }
 

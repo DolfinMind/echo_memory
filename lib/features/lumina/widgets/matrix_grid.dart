@@ -60,39 +60,57 @@ class _MatrixTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color color = Colors.white.withOpacity(0.05);
-    BoxBorder? border = Border.all(color: Colors.white.withOpacity(0.1));
+    Color color = Colors.white.withValues(alpha: 0.05);
+    BoxBorder? border = Border.all(color: Colors.white.withValues(alpha: 0.1));
     List<BoxShadow> shadows = [];
 
     if (isActive) {
       if (state == LuminaState.success) {
         color = AppColors.orbGreen;
-        shadows = [BoxShadow(color: AppColors.orbGreen.withOpacity(0.6), blurRadius: 15)];
+        shadows = [
+          BoxShadow(
+            color: AppColors.orbGreen.withValues(alpha: 0.6),
+            blurRadius: 15,
+          ),
+        ];
       } else if (state == LuminaState.failed) {
         color = AppColors.orbRed;
-        shadows = [BoxShadow(color: AppColors.orbRed.withOpacity(0.6), blurRadius: 15)];
+        shadows = [
+          BoxShadow(
+            color: AppColors.orbRed.withValues(alpha: 0.6),
+            blurRadius: 15,
+          ),
+        ];
       } else {
         color = AppColors.orbBlue;
-        shadows = [BoxShadow(color: AppColors.orbBlue.withOpacity(0.6), blurRadius: 10)];
+        shadows = [
+          BoxShadow(
+            color: AppColors.orbBlue.withValues(alpha: 0.6),
+            blurRadius: 10,
+          ),
+        ];
       }
       border = null;
     }
 
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(12),
-          border: border,
-          boxShadow: shadows,
-        ),
-      ).animate(target: isActive ? 1 : 0).scale(
-        begin: const Offset(1, 1),
-        end: const Offset(0.95, 0.95),
-        curve: Curves.easeInOut,
-      ),
+      child:
+          AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(12),
+                  border: border,
+                  boxShadow: shadows,
+                ),
+              )
+              .animate(target: isActive ? 1 : 0)
+              .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(0.95, 0.95),
+                curve: Curves.easeInOut,
+              ),
     );
   }
 }

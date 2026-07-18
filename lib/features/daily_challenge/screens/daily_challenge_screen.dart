@@ -1,14 +1,16 @@
 /// Daily Challenge screen for Echo Memory
-/// One challenge per day with leaderboard integration
+/// One deterministic, entirely offline challenge per day.
+library;
+
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import 'package:intl/intl.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/theme/app_colors.dart';
 import '../../../config/theme/app_text_styles.dart';
+import '../../../core/game/game_scoring.dart';
 import '../../../core/services/sound_service.dart';
 import '../../../core/services/haptic_service.dart';
 import '../../../core/utils/responsive_utils.dart';
@@ -16,8 +18,6 @@ import '../../../shared/widgets/animated_gradient.dart';
 import '../../../shared/widgets/glass_container.dart';
 import '../../../shared/widgets/neon_button.dart';
 import '../../game/widgets/color_orb.dart';
-import '../../game/widgets/score_display.dart';
-import '../../game/animations/celebration_overlay.dart';
 import '../../home/screens/home_screen.dart';
 
 class DailyChallengeScreen extends StatefulWidget {
@@ -30,7 +30,7 @@ class DailyChallengeScreen extends StatefulWidget {
 class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
   final SoundService _soundService = SoundService();
   final HapticService _hapticService = HapticService();
-  
+
   List<int> _sequence = [];
   int _currentIndex = 0;
   int _score = 0;
@@ -41,6 +41,8 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
   int? _todayHighScore;
   int _highlightedOrbIndex = -1;
   Timer? _patternTimer;
+  Timer? _flashTimer;
+  Timer? _phaseTimer;
   late DateTime _today;
   late Random _random;
 
@@ -56,14 +58,17 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
   @override
   void dispose() {
     _patternTimer?.cancel();
+    _flashTimer?.cancel();
+    _phaseTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _loadDailyChallenge() async {
     final prefs = await SharedPreferences.getInstance();
     final lastPlayedDate = prefs.getString('daily_challenge_date');
-    final todayStr = DateFormat('yyyy-MM-dd').format(_today);
+    final todayStr = _dateKey(_today);
 
+    if (!mounted) return;
     if (lastPlayedDate == todayStr) {
       setState(() {
         _hasPlayedToday = true;
@@ -74,7 +79,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
 
   Future<void> _saveDailyChallenge() async {
     final prefs = await SharedPreferences.getInstance();
-    final todayStr = DateFormat('yyyy-MM-dd').format(_today);
+    final todayStr = _dateKey(_today);
     await prefs.setString('daily_challenge_date', todayStr);
     await prefs.setInt('daily_challenge_score', _score);
   }
@@ -91,31 +96,33 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
 
   void _displayPattern() {
     _patternTimer?.cancel();
+    _flashTimer?.cancel();
+    _phaseTimer?.cancel();
     int displayIndex = 0;
 
-    _patternTimer = Timer.periodic(
-      const Duration(milliseconds: 700),
-      (timer) {
-        if (displayIndex < _sequence.length) {
-          setState(() => _highlightedOrbIndex = _sequence[displayIndex]);
-          _soundService.playColorSound(_sequence[displayIndex]);
+    _patternTimer = Timer.periodic(const Duration(milliseconds: 700), (timer) {
+      if (displayIndex < _sequence.length) {
+        setState(() => _highlightedOrbIndex = _sequence[displayIndex]);
+        _soundService.playColorSound(_sequence[displayIndex]);
 
-          Future.delayed(const Duration(milliseconds: 350), () {
-            if (mounted) setState(() => _highlightedOrbIndex = -1);
-          });
-          displayIndex++;
-        } else {
-          timer.cancel();
-          Future.delayed(const Duration(milliseconds: 400), () {
-            if (mounted) setState(() => _showPattern = false);
-          });
-        }
-      },
-    );
+        _flashTimer?.cancel();
+        _flashTimer = Timer(const Duration(milliseconds: 350), () {
+          if (mounted) setState(() => _highlightedOrbIndex = -1);
+        });
+        displayIndex++;
+      } else {
+        timer.cancel();
+        _phaseTimer = Timer(const Duration(milliseconds: 400), () {
+          if (mounted) setState(() => _showPattern = false);
+        });
+      }
+    });
   }
 
   void _onOrbTap(int colorIndex) {
-    if (_showPattern || _isGameOver) return;
+    if (_showPattern || _isGameOver || _currentIndex >= _sequence.length) {
+      return;
+    }
 
     _soundService.playColorSound(colorIndex);
     _hapticService.lightImpact();
@@ -123,8 +130,11 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
     if (_sequence[_currentIndex] == colorIndex) {
       _soundService.playCorrect();
       setState(() {
+        _score += GameScoring.correctColor(
+          streak: _currentIndex + 1,
+          difficultyMultiplier: 2,
+        );
         _currentIndex++;
-        _score += 15;
       });
 
       if (_currentIndex >= _sequence.length) {
@@ -139,7 +149,15 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
     _soundService.playVictory();
     _hapticService.success();
 
-    Future.delayed(const Duration(milliseconds: 800), () {
+    setState(() {
+      _showPattern = true;
+      _score += GameScoring.roundBonus(
+        sequenceLength: _sequence.length,
+        difficultyMultiplier: 2,
+      );
+    });
+    _phaseTimer?.cancel();
+    _phaseTimer = Timer(const Duration(milliseconds: 800), () {
       if (mounted) {
         setState(() {
           _sequence.add(_random.nextInt(5));
@@ -154,7 +172,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
   void _handleGameOver() {
     _soundService.playGameOver();
     _hapticService.gameOver();
-    
+
     setState(() {
       _isGameOver = true;
       _hasPlayedToday = true;
@@ -170,7 +188,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
     return Scaffold(
       body: ParticleBackground(
         particleCount: 20,
-        particleColor: AppColors.orbPurple.withOpacity(0.3),
+        particleColor: AppColors.orbPurple.withValues(alpha: 0.3),
         child: GameGradientBackground(
           child: SafeArea(
             child: Padding(
@@ -206,7 +224,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
           child: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.surface.withOpacity(0.5),
+              color: AppColors.surface.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
@@ -219,14 +237,14 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               LucideIcons.calendar,
               color: AppColors.orbPurple,
               size: 16,
             ),
             const SizedBox(width: 8),
             Text(
-              DateFormat('MMM d').format(_today),
+              _dateLabel(_today),
               style: AppTextStyles.labelMedium.copyWith(
                 color: AppColors.orbPurple,
               ),
@@ -237,7 +255,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 LucideIcons.star,
                 color: AppColors.accentGold,
                 size: 16,
@@ -258,6 +276,29 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
     );
   }
 
+  String _dateKey(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  String _dateLabel(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}';
+  }
+
   Widget _buildWelcome() {
     return GlassContainer(
       padding: const EdgeInsets.all(32),
@@ -269,10 +310,10 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
             height: 80,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.orbPurple.withOpacity(0.2),
+              color: AppColors.orbPurple.withValues(alpha: 0.2),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.orbPurple.withOpacity(0.3),
+                  color: AppColors.orbPurple.withValues(alpha: 0.3),
                   blurRadius: 20,
                   spreadRadius: 5,
                 ),
@@ -285,10 +326,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          Text(
-            'Daily Challenge',
-            style: AppTextStyles.headlineMedium,
-          ),
+          Text('Daily Challenge', style: AppTextStyles.headlineMedium),
           const SizedBox(height: 8),
           Text(
             'One attempt per day\nHow far can you go?',
@@ -366,10 +404,7 @@ class _DailyChallengeScreenState extends State<DailyChallengeScreen> {
           ),
           const SizedBox(height: 24),
           Text('Final Score', style: AppTextStyles.labelMedium),
-          Text(
-            '$_score',
-            style: AppTextStyles.score.copyWith(fontSize: 64),
-          ),
+          Text('$_score', style: AppTextStyles.score.copyWith(fontSize: 64)),
           const SizedBox(height: 16),
           Text(
             'Sequence Length: ${_sequence.length}',

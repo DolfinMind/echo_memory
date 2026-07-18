@@ -1,5 +1,7 @@
 /// Main theme configuration for Echo Memory
 /// Combines colors, text styles, and component themes
+library;
+
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_text_styles.dart';
@@ -38,12 +40,12 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.cardBackground,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: AppColors.cardBorder),
+          side: const BorderSide(color: AppColors.cardBorder),
         ),
       ),
 
@@ -70,17 +72,12 @@ class AppTheme {
       ),
 
       // Icon Theme
-      iconTheme: const IconThemeData(
-        color: AppColors.textPrimary,
-        size: 24,
-      ),
+      iconTheme: const IconThemeData(color: AppColors.textPrimary, size: 24),
 
       // Dialog Theme
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         titleTextStyle: AppTextStyles.headlineSmall,
         contentTextStyle: AppTextStyles.bodyLarge,
       ),
@@ -89,9 +86,7 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.surfaceLight,
         contentTextStyle: AppTextStyles.bodyMedium,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
 
@@ -114,36 +109,29 @@ class AppTheme {
         labelSmall: AppTextStyles.labelSmall,
       ),
 
-      // Page Transitions
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: {
-          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-        },
-      ),
+      // Native Material transitions preserve predictive-back behavior.
     );
   }
 
   // Box decorations for common UI patterns
   static BoxDecoration get glassDecoration => BoxDecoration(
-        color: AppColors.glassBackground,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.glassBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      );
+    color: AppColors.glassBackground,
+    borderRadius: BorderRadius.circular(20),
+    border: Border.all(color: AppColors.glassBorder),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: 0.1),
+        blurRadius: 20,
+        offset: const Offset(0, 10),
+      ),
+    ],
+  );
 
   static BoxDecoration get cardDecoration => BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cardBorder),
-      );
+    color: AppColors.cardBackground,
+    borderRadius: BorderRadius.circular(20),
+    border: Border.all(color: AppColors.cardBorder),
+  );
 
   static BoxDecoration orbDecoration(int colorIndex, {bool isActive = false}) {
     final color = AppColors.gameOrbs[colorIndex % AppColors.gameOrbs.length];
@@ -154,21 +142,23 @@ class AppTheme {
       shape: BoxShape.circle,
       gradient: RadialGradient(
         colors: [
-          isActive ? glowColor : color.withOpacity(0.9),
+          isActive ? glowColor : color.withValues(alpha: 0.9),
           color,
-          color.withOpacity(0.7),
+          color.withValues(alpha: 0.7),
         ],
         stops: const [0.0, 0.5, 1.0],
       ),
       boxShadow: [
         BoxShadow(
-          color: isActive ? glowColor.withOpacity(0.6) : color.withOpacity(0.3),
+          color: isActive
+              ? glowColor.withValues(alpha: 0.6)
+              : color.withValues(alpha: 0.3),
           blurRadius: isActive ? 30 : 15,
           spreadRadius: isActive ? 5 : 0,
         ),
         if (isActive)
           BoxShadow(
-            color: glowColor.withOpacity(0.4),
+            color: glowColor.withValues(alpha: 0.4),
             blurRadius: 50,
             spreadRadius: 10,
           ),

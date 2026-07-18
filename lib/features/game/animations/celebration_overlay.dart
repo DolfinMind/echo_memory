@@ -1,5 +1,7 @@
 /// Celebration overlay for Echo Memory
 /// Confetti, explosions, and victory animations
+library;
+
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../config/theme/app_colors.dart';
@@ -29,10 +31,8 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    )..addStatusListener((status) {
+    _controller = AnimationController(duration: widget.duration, vsync: this)
+      ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
           widget.onComplete?.call();
         }
@@ -63,11 +63,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
   List<Color> _getColors() {
     switch (widget.type) {
       case CelebrationType.levelComplete:
-        return [
-          AppColors.orbGreen,
-          AppColors.orbBlue,
-          AppColors.accentGold,
-        ];
+        return [AppColors.orbGreen, AppColors.orbBlue, AppColors.accentGold];
       case CelebrationType.newHighScore:
         return AppColors.auroraGradient;
       case CelebrationType.legendary:
@@ -78,11 +74,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
           Colors.white,
         ];
       case CelebrationType.achievement:
-        return [
-          AppColors.accentGold,
-          Colors.white,
-          AppColors.orbBlue,
-        ];
+        return [AppColors.accentGold, Colors.white, AppColors.orbBlue];
     }
   }
 
@@ -103,8 +95,8 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
             if (_controller.value < 0.1)
               Positioned.fill(
                 child: Container(
-                  color: Colors.white.withOpacity(
-                    (1 - _controller.value * 10).clamp(0, 0.3),
+                  color: Colors.white.withValues(
+                    alpha: (1 - _controller.value * 10).clamp(0, 0.3),
                   ),
                 ),
               ),
@@ -129,8 +121,8 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: [
-                        AppColors.accentGold.withOpacity(
-                          (1 - _controller.value * 3.3).clamp(0, 0.8),
+                        AppColors.accentGold.withValues(
+                          alpha: (1 - _controller.value * 3.3).clamp(0, 0.8),
                         ),
                         Colors.transparent,
                       ],
@@ -145,12 +137,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay>
   }
 }
 
-enum CelebrationType {
-  levelComplete,
-  newHighScore,
-  legendary,
-  achievement,
-}
+enum CelebrationType { levelComplete, newHighScore, legendary, achievement }
 
 class _Confetti {
   double x;
@@ -178,10 +165,7 @@ class _ConfettiPainter extends CustomPainter {
   final List<_Confetti> confetti;
   final double progress;
 
-  _ConfettiPainter({
-    required this.confetti,
-    required this.progress,
-  });
+  _ConfettiPainter({required this.confetti, required this.progress});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -189,7 +173,8 @@ class _ConfettiPainter extends CustomPainter {
       // Update position
       final y = c.y + progress * c.velocity * 1.5;
       final x = c.x + math.sin(progress * math.pi * 2) * c.horizontalDrift;
-      final rotation = (c.rotation + progress * c.rotationSpeed) * math.pi / 180;
+      final rotation =
+          (c.rotation + progress * c.rotationSpeed) * math.pi / 180;
 
       // Skip if out of bounds
       if (y > 1.2) continue;
@@ -198,7 +183,7 @@ class _ConfettiPainter extends CustomPainter {
       final opacity = y > 0.8 ? (1.2 - y) / 0.4 : 1.0;
 
       final paint = Paint()
-        ..color = c.color.withOpacity(opacity.clamp(0, 1))
+        ..color = c.color.withValues(alpha: opacity.clamp(0, 1))
         ..style = PaintingStyle.fill;
 
       canvas.save();
@@ -260,10 +245,8 @@ class _ScreenShakeState extends State<ScreenShake>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    )..addStatusListener((status) {
+    _controller = AnimationController(duration: widget.duration, vsync: this)
+      ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
           widget.onComplete?.call();
         }
@@ -294,12 +277,10 @@ class _ScreenShakeState extends State<ScreenShake>
         }
 
         final decay = 1 - _controller.value;
-        final offsetX = (_random.nextDouble() * 2 - 1) *
-            widget.intensity *
-            decay;
-        final offsetY = (_random.nextDouble() * 2 - 1) *
-            widget.intensity *
-            decay;
+        final offsetX =
+            (_random.nextDouble() * 2 - 1) * widget.intensity * decay;
+        final offsetY =
+            (_random.nextDouble() * 2 - 1) * widget.intensity * decay;
 
         return Transform.translate(
           offset: Offset(offsetX, offsetY),
@@ -334,10 +315,8 @@ class _PulseRingState extends State<PulseRing>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    )..repeat();
+    _controller = AnimationController(duration: widget.duration, vsync: this)
+      ..repeat();
   }
 
   @override
@@ -362,7 +341,7 @@ class _PulseRingState extends State<PulseRing>
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: widget.color.withOpacity(opacity),
+                color: widget.color.withValues(alpha: opacity),
                 width: 3,
               ),
             ),

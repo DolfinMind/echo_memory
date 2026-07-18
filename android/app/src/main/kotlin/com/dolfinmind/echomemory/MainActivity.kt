@@ -1,4 +1,4 @@
-package com.pixel.peak.second
+package com.dolfinmind.echomemory
 
 import io.flutter.embedding.android.FlutterActivity
 

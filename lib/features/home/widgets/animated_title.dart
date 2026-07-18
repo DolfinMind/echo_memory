@@ -1,5 +1,7 @@
 /// Animated game title widget for Echo Memory
 /// Premium title with glow and shimmer effects
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../config/theme/app_colors.dart';
@@ -8,23 +10,20 @@ import '../../../config/theme/app_text_styles.dart';
 class AnimatedGameTitle extends StatelessWidget {
   final double fontSize;
 
-  const AnimatedGameTitle({
-    super.key,
-    this.fontSize = 52,
-  });
+  const AnimatedGameTitle({super.key, this.fontSize = 52});
 
   @override
   Widget build(BuildContext context) {
     return ShaderMask(
-      shaderCallback: (bounds) => const LinearGradient(
-        colors: AppColors.auroraGradient,
-      ).createShader(bounds),
-      child: Text(
-        'Echo Memory',
-        style: AppTextStyles.gameTitle.copyWith(fontSize: fontSize),
-        textAlign: TextAlign.center,
-      ),
-    )
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: AppColors.auroraGradient,
+          ).createShader(bounds),
+          child: Text(
+            'Echo Memory',
+            style: AppTextStyles.gameTitle.copyWith(fontSize: fontSize),
+            textAlign: TextAlign.center,
+          ),
+        )
         .animate()
         .fadeIn(duration: 600.ms)
         .scale(
@@ -36,7 +35,7 @@ class AnimatedGameTitle extends StatelessWidget {
         .then()
         .shimmer(
           duration: 2000.ms,
-          color: Colors.white.withOpacity(0.3),
+          color: Colors.white.withValues(alpha: 0.3),
           delay: 500.ms,
         );
   }

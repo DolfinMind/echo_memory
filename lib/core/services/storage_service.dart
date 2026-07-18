@@ -1,5 +1,7 @@
 /// Storage service for Echo Memory
 /// Handles all persistent data storage with error resilience
+library;
+
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -128,7 +130,10 @@ class StorageService {
 
   Future<void> setAchievements(AchievementProgress progress) async {
     try {
-      await _preferences?.setString(AssetPaths.keyAchievements, progress.encode());
+      await _preferences?.setString(
+        AssetPaths.keyAchievements,
+        progress.encode(),
+      );
     } catch (e) {
       debugPrint('Error setting achievements: $e');
     }
@@ -225,7 +230,8 @@ class StorageService {
   /// Check if this is the first launch
   Future<bool> isFirstLaunch() async {
     try {
-      final hasPlayed = _preferences?.containsKey(AssetPaths.keyPlayerStats) ?? false;
+      final hasPlayed =
+          _preferences?.containsKey(AssetPaths.keyPlayerStats) ?? false;
       return !hasPlayed;
     } catch (e) {
       debugPrint('Error checking first launch: $e');

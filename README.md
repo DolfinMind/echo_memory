@@ -1,67 +1,59 @@
-## Test your memory and focus by repeating color sequences. How far can you go?
+# Echo Memory
 
-<p float="left">
-   <img src="https://github.com/Saif64/echo_memory/blob/master/ss/image1.png" width="200" />
-  <img src="https://github.com/Saif64/echo_memory/blob/master/ss/image2.png" width="200" />
-  <img src="https://github.com/Saif64/echo_memory/blob/master/ss/image3.png" width="200" />
-  <img src="https://github.com/Saif64/echo_memory/blob/master/ss/image4.png" width="200" />
-  <br>
-  
-  <img src="https://github.com/Saif64/echo_memory/blob/master/ss/home.png" width="200" />
-  <img src="https://github.com/Saif64/echo_memory/blob/master/ss/daily.png" width="200" />
-  <img src="https://github.com/Saif64/echo_memory/blob/master/ss/diff.png" width="200" />
-  <img src="https://github.com/Saif64/echo_memory/blob/master/ss/game.png" width="200" />
- 
-</p>
+Echo Memory is a private, offline memory game built with Flutter. Players watch
+visual patterns, recall them in order, and build streaks across seven focused
+game modes.
 
+## Release profile
 
+- Flutter 3.44.6 / Dart 3.12.2
+- Android package: `com.dolfinmind.echomemory`
+- Android target SDK 36, minimum SDK 24
+- No account, backend, ads, analytics, or internet permission
+- Scores and settings stay in local device storage
 
-### Sharpen your memory with Echo Memory! 🧠✨ Test your focus and recall skills by repeating color sequences that get more challenging with each level. How far can you go?
+## Run locally
 
-## 🔥 Features:
-- ✅ Simple & addictive gameplay
-- ✅ Increasing difficulty to challenge your brain
-- ✅ Clean & lightweight design
-- ✅ Perfect for all ages
-
-Train your memory and have fun! Download now and start playing! 🎮
-
-##### To run the app project first install ***fvm*** on your system.
-
-***for IOS build it's preferred to archive from xCode and upload the symbol files to as well.***
-
-## run:
-
-```
-fvm use 3.29.0
+```bash
+flutter pub get
+flutter run
 ```
 
-```
-configure firebase credantials and setup the firebase project on this device
+The project also pins Flutter 3.44.6 in `.fvmrc` for teams using FVM.
+
+## Verify
+
+```bash
+flutter analyze
+flutter test
 ```
 
-```
-fvm flutter pub get
-fvm flutter run
+## Create the Play bundle
+
+Create and securely back up a Play upload key before the production build:
+
+```bash
+keytool -genkeypair -v \
+  -keystore android/app/upload-keystore.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+cp android/app/key.properties.example android/app/key.properties
 ```
 
-## To give build for Android
+Replace the placeholders in `android/app/key.properties`, then build:
 
-```
-fvm flutter build appbundle --release --obfuscate --split-debug-info=./debug_info
-fvm flutter build apk --release --obfuscate --split-debug-info=./debug_info
-```
-
-## for IOS build
-
-```
-fvm flutter build ios --release --obfuscate --split-debug-info=./debug_info
-fvm flutter build ipa --release --obfuscate --split-debug-info=./debug_info
+```bash
+flutter build appbundle --release
 ```
 
-## for IOS upload-symbols
+The result is written to
+`build/app/outputs/bundle/release/app-release.aab`.
 
-```
-Pods/FirebaseCrashlytics/upload-symbols -gsp Runner/GoogleService-Info.plist -p ios build/Runner.xcarchive/dSYMs
-```
- 
+If `key.properties` is absent, the current Gradle configuration uses the local
+debug key only so release-mode behavior can be verified. Never upload that
+fallback bundle to Play. The upload keystore and its passwords must not be
+committed.
+
+## Play Store handoff
+
+Descriptions, policy answers, screenshots, icon, feature graphic, and the
+release checklist are in [`store_listing`](store_listing/).

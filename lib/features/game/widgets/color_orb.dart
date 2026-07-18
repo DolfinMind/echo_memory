@@ -1,10 +1,20 @@
-/// Color Orb widget for Echo Memory
-/// Premium animated color buttons with glow effects - Optimized
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
+
 import '../../../config/theme/app_colors.dart';
 
-class ColorOrb extends StatefulWidget {
+const _orbNames = ['Coral', 'Mint', 'Blue', 'Gold', 'Violet'];
+const _orbIcons = [
+  LucideIcons.flame,
+  LucideIcons.leaf,
+  LucideIcons.droplet,
+  LucideIcons.sun,
+  LucideIcons.diamond,
+];
+
+/// A color control with shape reinforcement for color-vision accessibility.
+class ColorOrb extends StatelessWidget {
   final int colorIndex;
   final double size;
   final VoidCallback? onTap;
@@ -23,225 +33,75 @@ class ColorOrb extends StatefulWidget {
   });
 
   @override
-  State<ColorOrb> createState() => _ColorOrbState();
-}
-
-class _ColorOrbState extends State<ColorOrb>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _pulseAnimation;
-  late Animation<double> _glowAnimation;
-  bool _isPressed = false;
-  
-  // Cache colors to avoid recalculating every build
-  late final Color _orbColor;
-  late final Color _glowColor;
-
-  @override
-  void initState() {
-    super.initState();
-    // Cache colors once
-    _orbColor = AppColors.gameOrbs[widget.colorIndex % AppColors.gameOrbs.length];
-    _glowColor = AppColors.gameOrbGlows[widget.colorIndex % AppColors.gameOrbGlows.length];
-    
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-
-    _glowAnimation = Tween<double>(begin: 0.3, end: 0.6).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
-
-    if (widget.isHighlighted) {
-      _controller.repeat(reverse: true);
-    }
-  }
-
-  @override
-  void didUpdateWidget(ColorOrb oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isHighlighted != oldWidget.isHighlighted) {
-      if (widget.isHighlighted) {
-        _controller.repeat(reverse: true);
-      } else {
-        _controller.stop();
-        _controller.reset();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onTapDown(TapDownDetails details) {
-    if (!widget.isDisabled) {
-      setState(() => _isPressed = true);
-    }
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    if (!widget.isDisabled) {
-      setState(() => _isPressed = false);
-      widget.onTap?.call();
-    }
-  }
-
-  void _onTapCancel() {
-    setState(() => _isPressed = false);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          final scale =
-              widget.isHighlighted ? _pulseAnimation.value : 1.0;
-          final glowIntensity =
-              widget.isHighlighted ? _glowAnimation.value : 0.3;
-          
-          // When highlighted, show actual colors even if disabled (for pattern display)
-          final showActualColors = widget.isHighlighted || !widget.isDisabled;
+    final index = colorIndex % AppColors.gameOrbs.length;
+    final color = AppColors.gameOrbs[index];
+    final glow = AppColors.gameOrbGlows[index];
+    final showColor = isHighlighted || !isDisabled;
+    final diameter = size.clamp(56, 104).toDouble();
 
-          return GestureDetector(
-            onTapDown: _onTapDown,
-            onTapUp: _onTapUp,
-            onTapCancel: _onTapCancel,
-            child: AnimatedScale(
-              scale: _isPressed ? 0.9 : scale,
-              duration: const Duration(milliseconds: 100),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Outer glow
-                  Container(
-                    width: widget.size * 1.3,
-                    height: widget.size * 1.3,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [
+    return Semantics(
+      button: true,
+      enabled: !isDisabled,
+      label: '${_orbNames[index]} memory button',
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(end: isHighlighted ? 1.08 : 1),
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        builder: (context, scale, child) =>
+            Transform.scale(scale: scale, child: child),
+        child: SizedBox.square(
+          dimension: diameter + 16,
+          child: Material(
+            color: Colors.transparent,
+            child: Ink(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  center: const Alignment(-0.25, -0.3),
+                  colors: showColor
+                      ? [glow, color, color.withValues(alpha: 0.78)]
+                      : [AppColors.surfaceLight, AppColors.surface],
+                ),
+                border: Border.all(
+                  color: isHighlighted
+                      ? AppColors.textPrimary
+                      : AppColors.cardBorder,
+                  width: isHighlighted ? 3 : 1.5,
+                ),
+                boxShadow: isHighlighted
+                    ? [
                         BoxShadow(
-                          color: _orbColor.withOpacity(
-                            showActualColors ? glowIntensity : 0.1,
-                          ),
-                          blurRadius: 30,
-                          spreadRadius: 5,
+                          color: color.withValues(alpha: 0.55),
+                          blurRadius: 24,
+                          spreadRadius: 3,
                         ),
-                      ],
-                    ),
-                  ),
-
-                  // Main orb
-                  Container(
-                    width: widget.size,
-                    height: widget.size,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: showActualColors
-                            ? [
-                                _glowColor,
-                                _orbColor,
-                                _orbColor.withOpacity(0.8),
-                              ]
-                            : [
-                                Colors.grey.shade600,
-                                Colors.grey.shade800,
-                              ],
-                        stops: showActualColors
-                            ? const [0.0, 0.4, 1.0]
-                            : const [0.0, 1.0],
-                        center: const Alignment(-0.3, -0.3),
-                      ),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(
-                          showActualColors ? 0.3 : 0.1,
-                        ),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        // Inner shadow (depth effect)
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(3, 3),
-                        ),
-                        // Colored glow
-                        if (showActualColors)
-                          BoxShadow(
-                            color: _orbColor.withOpacity(glowIntensity),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                          ),
-                      ],
-                    ),
-                    child: child,
-                  ),
-
-                  // Ripple effect on tap
-                  if (widget.showRipple && _isPressed)
-                    Container(
-                      width: widget.size * 1.5,
-                      height: widget.size * 1.5,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _glowColor.withOpacity(0.5),
-                          width: 3,
-                        ),
-                      ),
-                    ).animate().scale(
-                          begin: const Offset(0.8, 0.8),
-                          end: const Offset(1.2, 1.2),
-                          duration: 300.ms,
-                        ).fadeOut(duration: 300.ms),
-                ],
+                      ]
+                    : null,
               ),
-            ),
-          );
-        },
-        // Static highlight decoration passed as child
-        child: Stack(
-          children: [
-            // Highlight/reflection (static)
-            Positioned(
-              top: widget.size * 0.15,
-              left: widget.size * 0.2,
-              child: Container(
-                width: widget.size * 0.25,
-                height: widget.size * 0.15,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withOpacity(
-                        widget.isDisabled ? 0.1 : 0.4,
-                      ),
-                      Colors.white.withOpacity(0),
-                    ],
+              child: InkWell(
+                onTap: isDisabled ? null : onTap,
+                customBorder: const CircleBorder(),
+                child: Center(
+                  child: AnimatedOpacity(
+                    opacity: showColor ? 1 : 0.32,
+                    duration: const Duration(milliseconds: 150),
+                    child: Icon(
+                      _orbIcons[index],
+                      color: AppColors.textPrimary,
+                      size: diameter * 0.34,
+                    ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Animated color orb for pattern display
 class PatternOrb extends StatelessWidget {
   final int colorIndex;
   final int index;
@@ -256,50 +116,20 @@ class PatternOrb extends StatelessWidget {
     this.animateIn = true,
   });
 
-  Color get orbColor =>
-      AppColors.gameOrbs[colorIndex % AppColors.gameOrbs.length];
-  Color get glowColor =>
-      AppColors.gameOrbGlows[colorIndex % AppColors.gameOrbGlows.length];
-
   @override
   Widget build(BuildContext context) {
-    Widget orb = Container(
-      width: size,
-      height: size,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            glowColor,
-            orbColor,
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: orbColor.withOpacity(0.4),
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
+    Widget orb = ColorOrb(
+      colorIndex: colorIndex,
+      size: size,
+      isDisabled: true,
+      isHighlighted: true,
     );
-
     if (animateIn) {
       orb = orb
           .animate()
-          .fadeIn(delay: (index * 100).ms, duration: 300.ms)
-          .scale(
-            begin: const Offset(0.5, 0.5),
-            end: const Offset(1, 1),
-            delay: (index * 100).ms,
-            duration: 300.ms,
-            curve: Curves.elasticOut,
-          );
+          .fadeIn(delay: (index * 80).ms)
+          .scale(begin: const Offset(0.8, 0.8), duration: 220.ms);
     }
-
     return orb;
   }
 }

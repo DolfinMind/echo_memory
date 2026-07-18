@@ -1,10 +1,12 @@
 /// Animated gradient background widget for Echo Memory
 /// Creates beautiful moving gradient backgrounds
+library;
+
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../config/theme/app_colors.dart';
 
-class AnimatedGradientBackground extends StatefulWidget {
+class AnimatedGradientBackground extends StatelessWidget {
   final Widget child;
   final List<Color>? colors;
   final Duration duration;
@@ -19,57 +21,19 @@ class AnimatedGradientBackground extends StatefulWidget {
   });
 
   @override
-  State<AnimatedGradientBackground> createState() =>
-      _AnimatedGradientBackgroundState();
-}
-
-class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
-    if (widget.animate) {
-      _controller.repeat();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Return a static gradient for better performance
-    final colors = widget.colors ?? AppColors.auroraGradient;
-    
+    final backgroundColors = colors ?? AppColors.auroraGradient;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: colors,
+          colors: backgroundColors,
         ),
       ),
-      child: widget.child,
+      child: child,
     );
-  }
-
-  List<double> _generateStops(int count, double animValue) {
-    final stops = <double>[];
-    for (int i = 0; i < count; i++) {
-      final baseStop = i / (count - 1);
-      final offset = math.sin(animValue * 2 * math.pi + i) * 0.1;
-      stops.add((baseStop + offset).clamp(0.0, 1.0));
-    }
-    return stops;
   }
 }
 
@@ -87,17 +51,11 @@ class GameGradientBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: AppColors.gameBackground,
-      ),
+      decoration: const BoxDecoration(gradient: AppColors.gameBackground),
       child: Stack(
         children: [
           if (showOverlay)
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _GridOverlayPainter(),
-              ),
-            ),
+            Positioned.fill(child: CustomPaint(painter: _GridOverlayPainter())),
           child,
         ],
       ),
@@ -110,7 +68,7 @@ class _GridOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.02)
+      ..color = Colors.white.withValues(alpha: 0.02)
       ..strokeWidth = 1;
 
     const gridSize = 50.0;
@@ -131,7 +89,7 @@ class _GridOverlayPainter extends CustomPainter {
 }
 
 /// Floating particles background - Optimized
-class ParticleBackground extends StatefulWidget {
+class ParticleBackground extends StatelessWidget {
   final Widget child;
   final int particleCount;
   final Color particleColor;
@@ -143,64 +101,31 @@ class ParticleBackground extends StatefulWidget {
     this.particleColor = Colors.white,
   });
 
-  @override
-  State<ParticleBackground> createState() => _ParticleBackgroundState();
-}
-
-class _ParticleBackgroundState extends State<ParticleBackground>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late List<_Particle> _particles;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 20),
-      vsync: this,
-    )..repeat();
-
-    _initParticles();
-  }
-
-  void _initParticles() {
-    final random = math.Random();
-    _particles = List.generate(
-      widget.particleCount,
-      (index) => _Particle(
+  List<_Particle> _particles() {
+    final random = math.Random(42);
+    return List.generate(
+      particleCount,
+      (_) => _Particle(
         x: random.nextDouble(),
         y: random.nextDouble(),
         size: random.nextDouble() * 3 + 1,
-        speed: random.nextDouble() * 0.3 + 0.1,
         opacity: random.nextDouble() * 0.5 + 0.1,
       ),
     );
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        RepaintBoundary(child: widget.child),
+        RepaintBoundary(child: child),
         IgnorePointer(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              return CustomPaint(
-                size: Size.infinite,
-                painter: _ParticlePainter(
-                  particles: _particles,
-                  color: widget.particleColor,
-                  progress: _controller.value,
-                ),
-              );
-            },
+          child: CustomPaint(
+            size: Size.infinite,
+            painter: _ParticlePainter(
+              particles: _particles(),
+              color: particleColor,
+            ),
           ),
         ),
       ],
@@ -212,14 +137,12 @@ class _Particle {
   double x;
   double y;
   final double size;
-  final double speed;
   final double opacity;
 
   _Particle({
     required this.x,
     required this.y,
     required this.size,
-    required this.speed,
     required this.opacity,
   });
 }
@@ -227,32 +150,17 @@ class _Particle {
 class _ParticlePainter extends CustomPainter {
   final List<_Particle> particles;
   final Color color;
-  final double progress;
-  
-  // Cache paint objects to avoid allocation during paint
-  static final Map<double, Paint> _paintCache = {};
 
-  _ParticlePainter({
-    required this.particles,
-    required this.color,
-    required this.progress,
-  });
+  _ParticlePainter({required this.particles, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
     for (final particle in particles) {
-      final y = (particle.y + progress * particle.speed) % 1.0;
-      
-      // Use cached paint or create new one
-      final paint = _paintCache.putIfAbsent(
-        particle.opacity,
-        () => Paint()
-          ..color = color.withOpacity(particle.opacity)
-          ..style = PaintingStyle.fill,
-      );
+      paint.color = color.withValues(alpha: particle.opacity);
 
       canvas.drawCircle(
-        Offset(particle.x * size.width, y * size.height),
+        Offset(particle.x * size.width, particle.y * size.height),
         particle.size,
         paint,
       );
@@ -260,7 +168,5 @@ class _ParticlePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ParticlePainter oldDelegate) {
-    return oldDelegate.progress != progress;
-  }
+  bool shouldRepaint(covariant _ParticlePainter oldDelegate) => false;
 }

@@ -1,5 +1,7 @@
 /// Haptic feedback service for Echo Memory
 /// Provides tactile feedback for game interactions
+library;
+
 import 'package:flutter/services.dart';
 
 class HapticService {
@@ -57,7 +59,7 @@ class HapticService {
   /// Combo pattern - escalating intensity
   Future<void> combo(int level) async {
     if (!_enabled) return;
-    
+
     if (level >= 10) {
       // Legendary combo - triple heavy
       for (int i = 0; i < 3; i++) {

@@ -1,38 +1,40 @@
 /// Echo Memory - Main Entry Point
 /// A premium memory game with beautiful visuals
+library;
+
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'app.dart';
+import 'core/services/haptic_service.dart';
 import 'core/services/storage_service.dart';
 
-void main() async {
-  // Ensure Flutter bindings are initialized
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Set up global error handling
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.presentError(details);
-    // Log errors in debug mode, silently handle in release
-    if (kDebugMode) {
-      debugPrint('Flutter Error: ${details.exceptionAsString()}');
-      debugPrint('Stack trace:\n${details.stack}');
-    }
-  };
-
-  // Run the app with zone-guarded error handling
+void main() {
   runZonedGuarded(
     () async {
+      // Binding initialization and runApp must happen in the same zone.
+      WidgetsFlutterBinding.ensureInitialized();
+
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FlutterError.presentError(details);
+        if (kDebugMode) {
+          debugPrint('Flutter Error: ${details.exceptionAsString()}');
+          debugPrint('Stack trace:\n${details.stack}');
+        }
+      };
+
       // Initialize storage with error handling
       try {
-        await StorageService().init();
+        final storage = StorageService();
+        await storage.init();
+        HapticService().toggleHaptics(await storage.getHapticEnabled());
       } catch (e) {
         debugPrint('Storage initialization failed: $e');
         // Continue anyway - storage will use defaults
       }
 
-      // Set preferred orientations
+      // Keep every orientation available for phones, tablets, and foldables.
       await SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
@@ -40,7 +42,9 @@ void main() async {
         DeviceOrientation.landscapeRight,
       ]);
 
-      // Set system UI style
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+      // Transparent system bars let Flutter handle API 36 edge-to-edge safely.
       SystemChrome.setSystemUIOverlayStyle(
         const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,

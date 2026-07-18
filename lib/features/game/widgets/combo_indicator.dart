@@ -1,5 +1,7 @@
 /// Combo indicator widget for Echo Memory
 /// Shows combo status with animated text and effects
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../config/theme/app_colors.dart';
@@ -77,12 +79,12 @@ class ComboIndicator extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: comboColor.withOpacity(0.2),
+            color: comboColor.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: comboColor.withOpacity(0.5)),
+            border: Border.all(color: comboColor.withValues(alpha: 0.5)),
             boxShadow: [
               BoxShadow(
-                color: comboColor.withOpacity(0.3),
+                color: comboColor.withValues(alpha: 0.3),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
@@ -101,7 +103,7 @@ class ComboIndicator extends StatelessWidget {
         Text(
           '$streak streak',
           style: AppTextStyles.bodySmall.copyWith(
-            color: comboColor.withOpacity(0.8),
+            color: comboColor.withValues(alpha: 0.8),
           ),
         ),
       ],
@@ -110,10 +112,7 @@ class ComboIndicator extends StatelessWidget {
     if (showAnimation) {
       content = content
           .animate(onPlay: (controller) => controller.repeat())
-          .shimmer(
-            duration: 1500.ms,
-            color: comboColor.withOpacity(0.3),
-          );
+          .shimmer(duration: 1500.ms, color: comboColor.withValues(alpha: 0.3));
 
       // Add fire effect for high combos
       if (streak >= GameConstants.comboFireThreshold) {
@@ -147,34 +146,35 @@ class ComboIndicator extends StatelessWidget {
           return Positioned(
             left: 30.0 + (index * 20),
             bottom: 0,
-            child: Container(
-              width: 20,
-              height: 40,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    AppColors.comboFire.withOpacity(0.8),
-                    AppColors.comboLegendary.withOpacity(0.5),
-                    Colors.transparent,
-                  ],
-                ),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(10),
-                ),
-              ),
-            )
-                .animate(onPlay: (c) => c.repeat())
-                .moveY(
-                  begin: 0,
-                  end: -10,
-                  duration: 400.ms,
-                  curve: Curves.easeInOut,
-                )
-                .fadeOut(duration: 400.ms)
-                .then()
-                .fadeIn(duration: 100.ms),
+            child:
+                Container(
+                      width: 20,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            AppColors.comboFire.withValues(alpha: 0.8),
+                            AppColors.comboLegendary.withValues(alpha: 0.5),
+                            Colors.transparent,
+                          ],
+                        ),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(10),
+                        ),
+                      ),
+                    )
+                    .animate(onPlay: (c) => c.repeat())
+                    .moveY(
+                      begin: 0,
+                      end: -10,
+                      duration: 400.ms,
+                      curve: Curves.easeInOut,
+                    )
+                    .fadeOut(duration: 400.ms)
+                    .then()
+                    .fadeIn(duration: 100.ms),
           );
         }),
       ),
@@ -198,12 +198,12 @@ class FloatingComboText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      text,
-      style: AppTextStyles.withGlow(
-        AppTextStyles.combo.copyWith(color: color),
-        color,
-      ),
-    )
+          text,
+          style: AppTextStyles.withGlow(
+            AppTextStyles.combo.copyWith(color: color),
+            color,
+          ),
+        )
         .animate(onComplete: (_) => onComplete?.call())
         .fadeIn(duration: 200.ms)
         .scale(
@@ -222,21 +222,17 @@ class PointsPopup extends StatelessWidget {
   final int points;
   final VoidCallback? onComplete;
 
-  const PointsPopup({
-    super.key,
-    required this.points,
-    this.onComplete,
-  });
+  const PointsPopup({super.key, required this.points, this.onComplete});
 
   @override
   Widget build(BuildContext context) {
     return Text(
-      '+$points',
-      style: AppTextStyles.score.copyWith(
-        fontSize: 24,
-        color: AppColors.accentGold,
-      ),
-    )
+          '+$points',
+          style: AppTextStyles.score.copyWith(
+            fontSize: 24,
+            color: AppColors.accentGold,
+          ),
+        )
         .animate(onComplete: (_) => onComplete?.call())
         .fadeIn(duration: 100.ms)
         .scale(

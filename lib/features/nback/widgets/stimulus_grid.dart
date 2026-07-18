@@ -21,9 +21,9 @@ class StimulusGrid extends StatelessWidget {
       height: 280,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
       ),
       child: GridView.builder(
         physics: const NeverScrollableScrollPhysics(),
@@ -36,32 +36,34 @@ class StimulusGrid extends StatelessWidget {
         itemBuilder: (context, index) {
           final isActive = showStimulus && activePosition == index;
           return AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? (activeColor ?? AppColors.orbBlue)
-                  : Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isActive
-                    ? (activeColor ?? AppColors.orbBlue).withOpacity(0.8)
-                    : Colors.white.withOpacity(0.1),
-                width: isActive ? 2 : 1,
-              ),
-              boxShadow: isActive
-                  ? [
-                      BoxShadow(
-                        color: (activeColor ?? AppColors.orbBlue).withOpacity(0.5),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      )
-                    ]
-                  : null,
-            ),
-          ).animate(target: isActive ? 1 : 0).scale(
-                begin: const Offset(1, 1),
-                end: const Offset(0.9, 0.9),
-              );
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? (activeColor ?? AppColors.orbBlue)
+                      : Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isActive
+                        ? (activeColor ?? AppColors.orbBlue).withValues(
+                            alpha: 0.8,
+                          )
+                        : Colors.white.withValues(alpha: 0.1),
+                    width: isActive ? 2 : 1,
+                  ),
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: (activeColor ?? AppColors.orbBlue)
+                                .withValues(alpha: 0.5),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ]
+                      : null,
+                ),
+              )
+              .animate(target: isActive ? 1 : 0)
+              .scale(begin: const Offset(1, 1), end: const Offset(0.9, 0.9));
         },
       ),
     );

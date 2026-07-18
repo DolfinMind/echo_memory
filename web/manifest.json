@@ -1,6 +1,6 @@
 {
-    "name": "echo_memory",
-    "short_name": "echo_memory",
+    "name": "Echo Memory",
+    "short_name": "Echo Memory",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
