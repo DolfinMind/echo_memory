@@ -44,12 +44,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Privacy at a glance'),
-        content: const Text(
-          'Echo Memory is fully offline. It does not create an account, show '
-          'ads, use analytics, or collect or share personal data. Scores, '
-          'settings, and progress stay on this device and are removed when '
-          'the app data is cleared.',
+        title: const Text('Echo Memory Privacy Policy'),
+        content: const SingleChildScrollView(
+          child: Text(
+            'Effective July 18, 2026\n\n'
+            'Echo Memory is an offline Android game published by DolfinMind '
+            '(package com.dolfinmind.echomemory).\n\n'
+            'DATA COLLECTION AND SHARING\n'
+            'Echo Memory does not collect, transmit, sell, or share personal '
+            'or sensitive data. It has no advertising, analytics, tracking, '
+            'account, social, or backend SDKs and requests no internet or '
+            'sensitive device permissions.\n\n'
+            'LOCAL DATA\n'
+            'Scores, streaks, play statistics, tutorial completion, daily '
+            'challenge status, and preferences are stored only on this device '
+            'to provide game functionality. They are never sent to DolfinMind '
+            'or a third party.\n\n'
+            'RETENTION AND DELETION\n'
+            'Local data remains until you clear the app storage or uninstall '
+            'Echo Memory. Either action deletes it. There are no user accounts '
+            'and DolfinMind cannot retrieve data it never receives.\n\n'
+            'SECURITY AND CHILDREN\n'
+            'Privacy risk is minimized by offline operation. Device storage is '
+            'protected by Android. Echo Memory is not specifically directed to '
+            'children and knowingly collects no data from anyone.\n\n'
+            'CHANGES AND CONTACT\n'
+            'This policy and the Google Play Data safety declaration will be '
+            'updated before any future data practice changes. Privacy questions '
+            'can be sent to dolfinmind@gmail.com.',
+          ),
         ),
         actions: [
           TextButton(

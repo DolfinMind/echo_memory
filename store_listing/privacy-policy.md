@@ -42,8 +42,4 @@ updated before that release.
 
 ## Contact
 
-For privacy questions, open an issue through the DolfinMind Echo Memory support
-channel: https://github.com/DolfinMind/echo_memory/issues/new
-
-GitHub issues are public. Do not include personal or sensitive information in a
-support request.
+For privacy questions, contact DolfinMind at dolfinmind@gmail.com.

@@ -5,7 +5,7 @@
 - [x] Flutter 3.44.6 and Dart 3.12.2 migration
 - [x] Android Gradle Plugin 9.0.1, Gradle 9.1, Kotlin 2.3.20, Java 17
 - [x] Package name changed to `com.dolfinmind.echomemory`
-- [x] Version set to 2.1.0 (build 6)
+- [x] Version set to 2.1.0 (build 7)
 - [x] Target SDK 36 and minimum SDK 24
 - [x] Release shrinking and resource shrinking enabled
 - [x] No production internet, ad ID, storage, location, camera, or microphone permission
